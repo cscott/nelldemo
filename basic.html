@@ -47,7 +47,7 @@ pointLight = new THREE.PointLight(0xFFFFFF);
 pointLight.position.x = 0;
 pointLight.position.y = -5;
 pointLight.position.z = 0;
-scene.add(pointLight);
+//scene.add(pointLight);
 
 pointLight = new THREE.PointLight(0xFFFFFF);
 pointLight.position.x = 0;
@@ -72,30 +72,85 @@ var HEXES = x[1];
 
 var vo = [ GRASS_OFFSET, WATER_OFFSET, MOUNTAIN_OFFSET ];
 
-var s;
-for (var i=0; i<HEXES.length; i++) {
-  for (var j=0; j<HEXES[i].length; j++) {
-    var xoff = (j-2)*1.5;
-    var yoff = (i-2)*-SQRT3;
-    if ((j%2)==1) { yoff += SQRT3/2; }
-    for (var k=0; k<6; k++) {
-      console.assert(HEXES[i][j].x == j);
-      console.assert(HEXES[i][j].y == i);
-      var v = HEXES[i][j].vertices[k];
+function updateHex(scene, h, addEdges) {
+    var i, k, s;
+    if (h.objs && h.objs.length) {
+      for (i=0; i<h.objs.length; i++) {
+        scene.remove(h.objs[i]);
+      }
+    }
+    h.objs = [];
+
+    var xoff = (h.x-2)*1.5;
+    var yoff = (h.y-2)*-SQRT3;
+    if ((h.x%2)==1) { yoff += SQRT3/2; }
+
+    var avo = [];
+    for (k=0; k<6; k++) {
+      var v = h.vertices[k];
       s = new THREE.Mesh(
           new THREE.HexSegGeometry(k, v.color*2, BASE_HEIGHT, vo[v.color], 0),
           tileMaterial);
       s.position.x = xoff;
       s.position.y = yoff;
+      h.objs.push(s);
       scene.add(s);
+      avo.push(vo[v.color]);
     }
-    var h = HEXES[i][j];
     s = new THREE.Mesh(new THREE.HexCoreGeometry(BASE_HEIGHT, vo[h.color]),
                        tileMaterial);
     s.position.x = xoff;
     s.position.y = yoff;
+    h.objs.push(s);
     // XXX only height reflects core type at the moment.
     scene.add(s);
+
+    if (!addEdges) return;
+    s = new THREE.Mesh(new THREE.HexEdgeGeometry(BASE_HEIGHT, avo),
+                       edgeMaterial);
+    s.position.x = xoff;
+    s.position.y = yoff;
+    h.objs.push(s);
+    scene.add(s);
+}
+
+for (var i=0; i<HEXES.length; i++) {
+  for (var j=0; j<HEXES[i].length; j++) {
+    updateHex(scene, HEXES[i][j]);
+  }
+}
+
+var flippingHex = null;
+var doppelHex = null;
+function flipHex() {
+  var i, s;
+  if (flippingHex == null) {
+     var row = Math.floor(Math.random()*(HEXES.length));
+     var col = Math.floor(Math.random()*(HEXES[row].length));
+     flippingHex = HEXES[row][col];
+     flippingHex.startTime = Date.now();
+     // add back side to this hex!
+     updateHex(scene, flippingHex, true/*add edges*/);
+     // make a doppelganger
+     doppelHex = flippingHex.clone();
+     updateHex(scene, doppelHex, true/*add edges*/);
+  }
+  // 0.25 degree per millisecond.
+  var rotationAmt = (Date.now() - flippingHex.startTime) * 0.25 * Math.PI/180;
+  for (i=0; i<flippingHex.objs.length; i++) {
+    flippingHex.objs[i].rotation.x = rotationAmt;
+  }
+  for (i=0; i<doppelHex.objs.length; i++) {
+    doppelHex.objs[i].rotation.x = Math.PI + rotationAmt;
+  }
+  if (rotationAmt > Math.PI) {
+    // fully rotated
+    updateHex(scene, flippingHex); // resets rotation
+    flippingHex = null; // pick another one next time.
+    for (i=0; i<doppelHex.objs.length; i++) {
+      scene.remove(doppelHex.objs[i]);
+    }
+    doppelHex = null;
   }
 }
 
@@ -161,6 +216,7 @@ function animate() {
 
 function render() {
   if (controls) controls.update();
+  flipHex();
 
   renderer.render( scene, camera );
 }

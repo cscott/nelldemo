@@ -109,7 +109,6 @@ THREE.HexEdgeGeometry = function(baseHeight, vertexOffsets, mirrorUV) {
   // faces
   for (i=0; i<6; i++) {
     var j = i*4;
-		//if (i!=5) continue;
     this.faces.push(new THREE.Face4(j+0, j+1, j+3, j+2));
     this.faces.push(new THREE.Face4(j+2, j+3, (j+5)%24, (j+4)%24));
     this.faceVertexUvs[0].push([uvs[j+0], uvs[j+1], uvs[j+3], uvs[j+2]]);

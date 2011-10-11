@@ -1,5 +1,5 @@
 function randomColor() {
-  return Math.floor(Math.random()*4);
+  return Math.floor(Math.random()*3);
 }
 function Vertex(x,y,color) {
   this.x = x;
@@ -18,6 +18,13 @@ function Hex(x,y,color) {
 }
 Hex.prototype = {}
 Hex.prototype.constructor = Hex;
+Hex.prototype.clone = function() {
+  var h = new Hex(this.x, this.y, this.color);
+  for (var i=0; i<this.vertices.length; i++) {
+    h.vertices.push(this.vertices[i]);
+  }
+  return h;
+};
 
 function hex_init() {
   var NROWS = 4;
