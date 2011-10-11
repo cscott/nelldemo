@@ -132,26 +132,54 @@ var flippingHexes = null;
 var doppelHexes = null;
 var flippingNeighbors = null;
 function flipHex() {
-  var i, j, k, s;
+  var i, j, k, s, q;
   if (flipState == null) {
      flipState = { startTime: Date.now() };
-     var row = Math.floor(Math.random()*(HVERT.length));
-     var col = Math.floor(Math.random()*(HVERT[row].length));
-     flipState.hexes = HVERT[row][col].hexes;
+     if (Math.random() < 0.5) {
+       // change a vertex color
+       var row = Math.floor(Math.random()*(HVERT.length));
+       var col = Math.floor(Math.random()*(HVERT[row].length));
+       var v = HVERT[row][col];
+       var nv = v.clone();
+       nv.color = randomColor();
+       flipState.hexes = v.hexes;
+       flipState.doppel = [];
+       flipState.axes = [];
+       for (i=0; i<flipState.hexes.length; i++) {
+         flipState.doppel.push(flipState.hexes[i].clone());
+         var which = flipState.hexes[i].vertices.indexOf(v);
+         flipState.doppel[i].vertices[which] = nv;
+         var m = new THREE.Matrix4().setRotationZ((which*60-30)*Math.PI/180);
+         var axis = m.multiplyVector3(new THREE.Vector3(1,0,0));
+         flipState.axes.push(axis);
+       }
+     } else {
+       // change a core color
+       var row = Math.floor(Math.random()*(HEXES.length));
+       var col = Math.floor(Math.random()*(HEXES[row].length));
+       flipState.hexes = [ HEXES[row][col] ];
+       flipState.doppel = [ flipState.hexes[0].clone() ];
+       flipState.doppel[0].color = randomColor();
+       // pick axis at random, but quantize
+       var angle = Math.floor(Math.random()*12) * 30 * Math.PI/180;
+       var m = new THREE.Matrix4().setRotationZ(angle);
+       var axis = m.multiplyVector3(new THREE.Vector3(1,0,0));
+       flipState.axes = [ axis ];
+     }
+
      if (flipState.hexes.length==0) {
        flipState = null;
        return; // pick another one later
      }
-     // add back side to these hexes!
-     flipState.doppel = [];
+
+     // add edges, backs, find neighbors
      flipState.neighbors = [];
      for (i=0; i<flipState.hexes.length; i++) {
        // add edges
        updateHex(scene, flipState.hexes[i], true/*add edges*/);
        // make a doppelganger
-       flipState.doppel.push(flipState.hexes[i].clone());
        updateHex(scene, flipState.doppel[i], true/*add edges*/);
-       // add back sides to all the neighbors of these hexes
+       // find all neighbors
        var n = flipState.hexes[i].neighbors();
        for (j=0; j<n.length; j++) {
          if (!HEXES[n[j][1]]) { continue; }
@@ -173,26 +201,23 @@ function flipHex() {
        nn.push(flipState.neighbors[i]);
      }
      flipState.neighbors = nn;
+     // add edges to neighbors
      for (i=0; i<flipState.neighbors.length; i++) {
        updateHex(scene, flipState.neighbors[i], true);
      }
-     // pick axis at random
-     var axis = new THREE.Vector3(Math.random(), Math.random(), 0);
-     flipState.axis = axis.normalize();
   }
   // 0.25 degree per millisecond.
-  var rotationAmt = (Date.now() - flipState.startTime) * 0.25 * Math.PI/180;
-  var q1 = new THREE.Quaternion().setFromAxisAngle(flipState.axis, rotationAmt);
-  var q2 = new THREE.Quaternion().setFromAxisAngle(flipState.axis, Math.PI + rotationAmt);
+  var rotationAmt = (Date.now() - flipState.startTime) * 0.4 * Math.PI/180;
   for (i=0; i<flipState.hexes.length; i++) {
+    q = new THREE.Quaternion().setFromAxisAngle(flipState.axes[i],-rotationAmt);
     for (j=0; j<flipState.hexes[i].objs.length; j++) {
-      //flipState.hexes[i].objs[j].rotation.x = rotationAmt;
-      flipState.hexes[i].objs[j].quaternion = q1;
+      flipState.hexes[i].objs[j].quaternion = q;
       flipState.hexes[i].objs[j].useQuaternion = true;
     }
+    q = new THREE.Quaternion().setFromAxisAngle(flipState.axes[i], -rotationAmt
+                                                                   + Math.PI);
     for (j=0; j<flipState.doppel[i].objs.length; j++) {
-      //flipState.doppel[i].objs[j].rotation.x = Math.PI + rotationAmt;
-      flipState.doppel[i].objs[j].quaternion = q2;
+      flipState.doppel[i].objs[j].quaternion = q;
       flipState.doppel[i].objs[j].useQuaternion = true;
     }
   }
@@ -200,9 +225,15 @@ function flipHex() {
   if (rotationAmt > Math.PI) {
     // fully rotated
     for (i=0; i<flipState.hexes.length; i++) {
-      updateHex(scene, flipState.hexes[i]); // resets rotation
-      for (j=0; j<flipState.doppel[i].objs.length; j++) {
-        scene.remove(flipState.doppel[i].objs[j]);
+      var h = flipState.hexes[i], d = flipState.doppel[i];
+      // update all colors
+      h.color = d.color;
+      for (j=0; j<h.vertices.length; j++) {
+        h.vertices[j].color = d.vertices[j].color;
+      }
+      updateHex(scene, h); // resets rotation, color, etc
+      for (j=0; j<d.objs.length; j++) {
+        scene.remove(d.objs[j]);
       }
     }
     for (i=0; i<flipState.neighbors.length; i++) {

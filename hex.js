@@ -9,6 +9,13 @@ function Vertex(x,y,color) {
 }
 Vertex.prototype = {}
 Vertex.prototype.constructor = Vertex;
+Vertex.prototype.clone = function() {
+  var v = new Vertex(this.x, this.y, this.color);
+  for (var i=0; i<this.hexes.length; i++) {
+    v.hexes.push(this.hexes[i]);
+  }
+  return v;
+};
 
 function Hex(x,y,color) {
   this.x = x;
