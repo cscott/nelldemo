@@ -5,7 +5,7 @@ THREE.HexCoreGeometry = function(baseHeight, centerOffset) {
   THREE.Geometry.call(this);
   var v = new THREE.Vector3(1/4, SQRT3/4, baseHeight);
   var m = new THREE.Matrix4();
-  var i;
+  var i,j;
   this.vertices.push(new THREE.Vertex(new THREE.Vector3(0,0,
                                       baseHeight + centerOffset)));
   for (i=0; i<6; i++) {
@@ -27,7 +27,7 @@ THREE.HexCoreGeometry = function(baseHeight, centerOffset) {
   this.computeFaceNormals();
 };
 THREE.HexCoreGeometry.prototype = new THREE.Geometry();
-THREE.HexCoreGeometry.prototype.contructor = THREE.HexCoreGeometry;
+THREE.HexCoreGeometry.prototype.constructor = THREE.HexCoreGeometry;
 
 THREE.HexSegGeometry = function(segRot, uvRot, baseHeight,
                                 vertexOffset, centerOffset) {
@@ -68,7 +68,7 @@ THREE.HexSegGeometry = function(segRot, uvRot, baseHeight,
   this.computeFaceNormals();
 };
 THREE.HexSegGeometry.prototype = new THREE.Geometry();
-THREE.HexSegGeometry.prototype.contructor = THREE.HexSegGeometry;
+THREE.HexSegGeometry.prototype.constructor = THREE.HexSegGeometry;
 
 THREE.HexEdgeGeometry = function(baseHeight, vertexOffsets, mirrorUV) {
   THREE.Geometry.call(this);
@@ -126,4 +126,4 @@ THREE.HexEdgeGeometry = function(baseHeight, vertexOffsets, mirrorUV) {
 */
 };
 THREE.HexEdgeGeometry.prototype = new THREE.Geometry();
-THREE.HexEdgeGeometry.prototype.contructor = THREE.HexEdgeGeometry;
+THREE.HexEdgeGeometry.prototype.constructor = THREE.HexEdgeGeometry;
