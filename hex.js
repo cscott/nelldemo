@@ -34,7 +34,7 @@ Hex.prototype.clone = function() {
 };
 Hex.prototype.neighbors = function() {
   var n = [ [this.x-1, this.y], [this.x+1, this.y],
-	    [this.x, this.y-1], [this.x, this.y+1] ];
+            [this.x, this.y-1], [this.x, this.y+1] ];
   // last two neighbors depend on whether this is an odd or even col hex
   if ((this.x % 2)==0) {
     n.push([this.x-1, this.y+1]);
@@ -73,16 +73,16 @@ function hex_init() {
       addV(hh, v[i][j*2+2]);
       addV(hh, v[i][j*2+1]);
       if (evenCol) {
-	addV(hh, v[i+1][j*2+0]);
+        addV(hh, v[i+1][j*2+0]);
       } else {
-	addV(hh, v[i][j*2+0]);
+        addV(hh, v[i][j*2+0]);
       }
       addV(hh, v[i+1][j*2+1]);
       addV(hh, v[i+1][j*2+2]);
       if (evenCol) {
-	addV(hh, v[i+1][j*2+3]);
+        addV(hh, v[i+1][j*2+3]);
       } else {
-	addV(hh, v[i][j*2+3]);
+        addV(hh, v[i][j*2+3]);
       }
     }
   }

@@ -75,7 +75,7 @@ THREE.HexEdgeGeometry = function(baseHeight, vertexOffsets, mirrorUV) {
   var UV_HEIGHT_SCALE = 1/3;
   var UV_CIRCUM_SCALE = 2;
   var v1 = new THREE.Vector3(1/2, SQRT3/2, baseHeight);
-	var v2 = new THREE.Vector3(0, SQRT3/2, baseHeight);
+        var v2 = new THREE.Vector3(0, SQRT3/2, baseHeight);
   var m = new THREE.Matrix4();
   var i, vv1, vv2;
   var uvs = [];
@@ -90,10 +90,10 @@ THREE.HexEdgeGeometry = function(baseHeight, vertexOffsets, mirrorUV) {
     vv1a.z += vertexOffsets[i%6];
     vv1b.z = vv2b.z = 0;
     if (i<6) {
-			this.vertices.push(new THREE.Vertex(vv1a));
-			this.vertices.push(new THREE.Vertex(vv1b));
-			this.vertices.push(new THREE.Vertex(vv2a));
-			this.vertices.push(new THREE.Vertex(vv2b));
+      this.vertices.push(new THREE.Vertex(vv1a));
+      this.vertices.push(new THREE.Vertex(vv1b));
+      this.vertices.push(new THREE.Vertex(vv2a));
+      this.vertices.push(new THREE.Vertex(vv2b));
     }
     uvs.push(new THREE.UV((2*i)/12, baseHeight + vertexOffsets[i%6]));
     uvs.push(new THREE.UV((2*i)/12, 0));
@@ -102,9 +102,9 @@ THREE.HexEdgeGeometry = function(baseHeight, vertexOffsets, mirrorUV) {
   }
   // scaling
   for (i=0; i<uvs.length; i++) {
-		uvs[i].u *= UV_CIRCUM_SCALE;
+                uvs[i].u *= UV_CIRCUM_SCALE;
     uvs[i].v *= UV_HEIGHT_SCALE;
-		if (mirrorUV) { uvs[i].u = 16/12 - uvs[i].u; }
+                if (mirrorUV) { uvs[i].u = 16/12 - uvs[i].u; }
   }
   // faces
   for (i=0; i<6; i++) {
