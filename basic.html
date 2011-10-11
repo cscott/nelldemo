@@ -70,7 +70,17 @@ var x = hex_init();
 var HVERT = x[0];
 var HEXES = x[1];
 
-var vo = [ GRASS_OFFSET, WATER_OFFSET, MOUNTAIN_OFFSET ];
+// A = mountain, B = grass, C = sea
+var COLOR_OFFSET = [ MOUNTAIN_OFFSET, GRASS_OFFSET, WATER_OFFSET ];
+// 0 -> mountain->grass
+// 1 -> grass->grass
+// 2 -> grass->water
+// 3 -> water->water
+// 4 -> water->mountain
+// 5 -> mountain->mountain
+var COLOR_TABLE = [ /* mountain */ [  [5,false], [0,false], [4,true ] ],
+                    /* grass */    [  [0,true ], [1,false], [2,false] ],
+                    /* sea */      [  [4,false], [2,true ], [3,false] ] ];
 
 function updateHex(scene, h, addEdges) {
     var i, k, s, n;
@@ -85,19 +95,21 @@ function updateHex(scene, h, addEdges) {
     var yoff = (h.y-(HEXES.length/2))*-SQRT3;
     if ((h.x%2)==1) { yoff += SQRT3/2; }
 
-    var avo = [];
     for (k=0; k<6; k++) {
-      var v = h.vertices[k];
+      var v1 = h.vertices[(k)%6], v2 = h.vertices[(k+1)%6];
+      var uvRot = COLOR_TABLE[v1.color][v2.color];
       s = new THREE.Mesh(
-          new THREE.HexSegGeometry(k, v.color*2, BASE_HEIGHT, vo[v.color], 0),
-          tileMaterial);
+          new THREE.HexSegGeometry(k+1, uvRot[0], uvRot[1], BASE_HEIGHT,
+                                   COLOR_OFFSET[v1.color],
+                                   COLOR_OFFSET[v2.color], 0),
+                         tileMaterial);
       s.position.x = xoff;
       s.position.y = yoff;
       h.objs.push(s);
       scene.add(s);
-      avo.push(vo[v.color]);
     }
-    s = new THREE.Mesh(new THREE.HexCoreGeometry(BASE_HEIGHT, vo[h.color]),
+    s = new THREE.Mesh(new THREE.HexCoreGeometry(BASE_HEIGHT,
+                                                 COLOR_OFFSET[h.color]),
                        tileMaterial);
     s.position.x = xoff;
     s.position.y = yoff;
@@ -113,6 +125,12 @@ function updateHex(scene, h, addEdges) {
     }
 
     if (!addEdges) return;
+
+    var avo = [];
+    for (k=0; k<6; k++) {
+      var v = h.vertices[k];
+      avo.push(COLOR_OFFSET[v.color]);
+    }
     s = new THREE.Mesh(new THREE.HexEdgeGeometry(BASE_HEIGHT, avo),
                        edgeMaterial);
     s.position.x = xoff;

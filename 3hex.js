@@ -29,19 +29,20 @@ THREE.HexCoreGeometry = function(baseHeight, centerOffset) {
 THREE.HexCoreGeometry.prototype = new THREE.Geometry();
 THREE.HexCoreGeometry.prototype.constructor = THREE.HexCoreGeometry;
 
-THREE.HexSegGeometry = function(segRot, uvRot, baseHeight,
-                                vertexOffset, centerOffset) {
+THREE.HexSegGeometry = function(segRot, uvRot, uvFlip, baseHeight,
+                                vertexOffset1, vertexOffset2,
+                                centerOffset) {
   THREE.Geometry.call(this);
   var segRotM = new THREE.Matrix4().setRotationZ(segRot*60*Math.PI/180);
   var  uvRotM = new THREE.Matrix4().setRotationZ( uvRot*60*Math.PI/180);
   var i, j;
 
-  var pts = [ [1/4,SQRT3/4,centerOffset],
+  var pts = [ [1/2,0,centerOffset],
+              [  1,0,vertexOffset1],
               [3/8,SQRT3/8,centerOffset],
               [3/4,SQRT3/4,0],
-              [1/2,SQRT3/2,vertexOffset],
-              [  0,SQRT3/2,0],
-              [  0,SQRT3/4,centerOffset] ];
+              [1/4,SQRT3/4,centerOffset],
+              [1/2,SQRT3/2,vertexOffset2] ];
 
   for (i=0; i<pts.length; i++) {
     this.vertices.push(new THREE.Vertex(segRotM.multiplyVector3(
@@ -49,15 +50,21 @@ THREE.HexSegGeometry = function(segRot, uvRot, baseHeight,
                                                      baseHeight + pts[i][2]))));
   }
 
-  var fs = [ [ 0, 1, 2 ],
-             [ 0, 2, 3 ],
-             [ 0, 3, 4 ],
-             [ 0, 4, 5 ] ];
+  var fs = [ [ 0, 1, 3 ],
+             [ 0, 3, 2 ],
+             [ 4, 2, 3 ],
+             [ 4, 3, 5 ] ];
   for (i=0; i<fs.length; i++) {
     this.faces.push( new THREE.Face3(fs[i][0], fs[i][1], fs[i][2]) );
     var uvs = [], v, p;
     for (j=0; j<3; j++) {
       p = pts[fs[i][j]];
+      if (uvFlip) { // reflect the point along the line from center to midpoint
+        var theta = 30*Math.PI/180;
+        var nx = p[0]*Math.cos(2*theta) + p[1]*Math.sin(2*theta);
+        var ny = p[0]*Math.sin(2*theta) - p[1]*Math.cos(2*theta);
+        p = [nx, ny];
+      }
       v = uvRotM.multiplyVector3(new THREE.Vector3(p[0], p[1], p[2]));
       uvs.push(new THREE.UV((v.x+1)/2, (v.y+1)/2));
     }

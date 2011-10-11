@@ -65,7 +65,7 @@ function hex_init() {
   for (i=0; i<NROWS; i++) {
     h[i] = [];
     for (j=0; j<NCOLS; j++) {
-      var hh = new Hex(j, i);
+      var hh = new Hex(j, i, j%3);
       h[i].push(hh);
       // now link up vertices
       var evenRow = (i%2) == 0;
