@@ -1,12 +1,13 @@
 // geometry for hex segments, cores, and edge pieces
 var SQRT3 = Math.sqrt(3);
 
-THREE.HexCoreGeometry = function(centerOffset, edgeOffset) {
+THREE.HexCoreGeometry = function(baseHeight, centerOffset) {
   THREE.Geometry.call(this);
-  var v = new THREE.Vector3(1/4,SQRT3/4,edgeOffset);
+  var v = new THREE.Vector3(1/4, SQRT3/4, baseHeight);
   var m = new THREE.Matrix4();
   var i;
-  this.vertices.push(new THREE.Vertex(new THREE.Vector3(0,0,centerOffset)));
+  this.vertices.push(new THREE.Vertex(new THREE.Vector3(0,0,
+                                      baseHeight + centerOffset)));
   for (i=0; i<6; i++) {
     var vv = m.setRotationZ(i*60*Math.PI/180).multiplyVector3(v.clone());
     this.vertices.push(new THREE.Vertex(vv));
@@ -24,16 +25,16 @@ THREE.HexCoreGeometry = function(centerOffset, edgeOffset) {
 
   this.computeCentroids();
   this.computeFaceNormals();
-  console.log(this);
 };
 THREE.HexCoreGeometry.prototype = new THREE.Geometry();
 THREE.HexCoreGeometry.prototype.contructor = THREE.HexCoreGeometry;
 
-THREE.HexSegGeometry = function(segRot, uvRot, vertexOffset, centerOffset) {
-  var i, j;
+THREE.HexSegGeometry = function(segRot, uvRot, baseHeight,
+                                vertexOffset, centerOffset) {
   THREE.Geometry.call(this);
   var segRotM = new THREE.Matrix4().setRotationZ(segRot*60*Math.PI/180);
   var  uvRotM = new THREE.Matrix4().setRotationZ( uvRot*60*Math.PI/180);
+  var i, j;
 
   var pts = [ [1/4,SQRT3/4,centerOffset],
               [3/8,SQRT3/8,centerOffset],
@@ -44,8 +45,8 @@ THREE.HexSegGeometry = function(segRot, uvRot, vertexOffset, centerOffset) {
 
   for (i=0; i<pts.length; i++) {
     this.vertices.push(new THREE.Vertex(segRotM.multiplyVector3(
-                                        new THREE.Vector3
-                                        (pts[i][0], pts[i][1], pts[i][2]))));
+                                        new THREE.Vector3(pts[i][0], pts[i][1],
+                                                     baseHeight + pts[i][2]))));
   }
 
   var fs = [ [ 0, 1, 2 ],
@@ -68,3 +69,61 @@ THREE.HexSegGeometry = function(segRot, uvRot, vertexOffset, centerOffset) {
 };
 THREE.HexSegGeometry.prototype = new THREE.Geometry();
 THREE.HexSegGeometry.prototype.contructor = THREE.HexSegGeometry;
+
+THREE.HexEdgeGeometry = function(baseHeight, vertexOffsets, mirrorUV) {
+  THREE.Geometry.call(this);
+  var UV_HEIGHT_SCALE = 1/3;
+  var UV_CIRCUM_SCALE = 2;
+  var v1 = new THREE.Vector3(1/2, SQRT3/2, baseHeight);
+	var v2 = new THREE.Vector3(0, SQRT3/2, baseHeight);
+  var m = new THREE.Matrix4();
+  var i, vv1, vv2;
+  var uvs = [];
+  // vertices
+  for (i=0; i<7; i++) {
+    var vv1a, vv1b, vv2a, vv2b;
+    m.setRotationZ(i*60*Math.PI/180);
+    vv1a = m.multiplyVector3(v1.clone());
+    vv2a = m.multiplyVector3(v2.clone());
+    vv1b = vv1a.clone();
+    vv2b = vv2a.clone();
+    vv1a.z += vertexOffsets[i%6];
+    vv1b.z = vv2b.z = 0;
+    if (i<6) {
+			this.vertices.push(new THREE.Vertex(vv1a));
+			this.vertices.push(new THREE.Vertex(vv1b));
+			this.vertices.push(new THREE.Vertex(vv2a));
+			this.vertices.push(new THREE.Vertex(vv2b));
+    }
+    uvs.push(new THREE.UV((2*i)/12, baseHeight + vertexOffsets[i%6]));
+    uvs.push(new THREE.UV((2*i)/12, 0));
+    uvs.push(new THREE.UV((2*i+1)/12, baseHeight));
+    uvs.push(new THREE.UV((2*i+1)/12, 0));
+  }
+  // scaling
+  for (i=0; i<uvs.length; i++) {
+		uvs[i].u *= UV_CIRCUM_SCALE;
+    uvs[i].v *= UV_HEIGHT_SCALE;
+		if (mirrorUV) { uvs[i].u = 16/12 - uvs[i].u; }
+  }
+  // faces
+  for (i=0; i<6; i++) {
+    var j = i*4;
+		//if (i!=5) continue;
+    this.faces.push(new THREE.Face4(j+0, j+1, j+3, j+2));
+    this.faces.push(new THREE.Face4(j+2, j+3, (j+5)%24, (j+4)%24));
+    this.faceVertexUvs[0].push([uvs[j+0], uvs[j+1], uvs[j+3], uvs[j+2]]);
+    this.faceVertexUvs[0].push([uvs[j+2], uvs[j+3], uvs[j+5], uvs[j+4]]);
+  }
+
+  this.computeCentroids();
+  this.computeFaceNormals();
+  // this makes the edges bright for debugging
+/*
+  for (i=0; i<this.faces.length; i++) {
+    this.faces[i].normal.negate();
+  }
+*/
+};
+THREE.HexEdgeGeometry.prototype = new THREE.Geometry();
+THREE.HexEdgeGeometry.prototype.contructor = THREE.HexEdgeGeometry;

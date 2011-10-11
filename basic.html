@@ -24,11 +24,11 @@ var container = document.body;
 var renderer = new THREE.WebGLRenderer();
 var camera = new THREE.PerspectiveCamera(45, SCREEN_WIDTH/SCREEN_HEIGHT,
                                          1, 1000);
-camera.position.z = 6;
+camera.position.z = 5;
+camera.position.y = -5;
+camera.lookAt(new THREE.Vector3(0,0,0));
 
 var scene = new THREE.Scene();
-
-var tileMaterial = new THREE.MeshLambertMaterial({map:THREE.ImageUtils.loadTexture( 'obj/mountain-tile/tile-draft-1-128.png')});
 
 var pointLight = new THREE.PointLight(0xFFFFFF);
 pointLight.position.x = 0.2;
@@ -42,22 +42,54 @@ pointLight.position.y = 1;
 pointLight.position.z = -2.6;
 scene.add(pointLight);
 
-var vo = [ 0, 0, -.1, -.1, .25, .25 ];
+pointLight = new THREE.PointLight(0xFFFFFF);
+pointLight.position.x = 0;
+pointLight.position.y = -5;
+pointLight.position.z = 0;
+scene.add(pointLight);
+
+pointLight = new THREE.PointLight(0xFFFFFF);
+pointLight.position.x = 0;
+pointLight.position.y = 5;
+pointLight.position.z = 0;
+scene.add(pointLight);
+
+var tileMaterial = new THREE.MeshLambertMaterial({map:THREE.ImageUtils.loadTexture( 'obj/mountain-tile/tile-draft-1-128.png')});
+var edgeTexture = THREE.ImageUtils.loadTexture( 'obj/mountain-tile/acorns.jpg');
+//var edgeTexture = THREE.ImageUtils.loadTexture( 'UV.jpg' );
+edgeTexture.wrapS = edgeTexture.wrapT = THREE.RepeatWrapping;
+var edgeMaterial = new THREE.MeshLambertMaterial({map:edgeTexture});
+
+
+var BASE_HEIGHT = .15;
+var WATER_OFFSET = -.1, GRASS_OFFSET = 0, MOUNTAIN_OFFSET = .25;
+var vo = [ GRASS_OFFSET, GRASS_OFFSET,
+           WATER_OFFSET, WATER_OFFSET,
+           MOUNTAIN_OFFSET, MOUNTAIN_OFFSET ];
 var s;
-var q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),Math.PI/4);
 for (var j=0; j<6; j++) {
-  s = new THREE.Mesh(new THREE.HexSegGeometry(j,j,vo[j],0), tileMaterial);
-  s.position.z = .1;
+  s = new THREE.Mesh(new THREE.HexSegGeometry(j, j, BASE_HEIGHT, vo[j], 0),
+                     tileMaterial);
   scene.add(s);
 
-  s = new THREE.Mesh(new THREE.HexSegGeometry(j,j,vo[j],0), tileMaterial);
-  s.position.z = -.1;
+  s = new THREE.Mesh(new THREE.HexSegGeometry(j, j, BASE_HEIGHT, vo[j], 0),
+                     tileMaterial);
   s.rotation.x = Math.PI;
   scene.add(s);
 }
-s = new THREE.Mesh(new THREE.HexCoreGeometry(.25, .1), tileMaterial);
+s = new THREE.Mesh(new THREE.HexCoreGeometry(BASE_HEIGHT, MOUNTAIN_OFFSET),
+                   tileMaterial);
 scene.add(s);
-s = new THREE.Mesh(new THREE.HexCoreGeometry(.25, .1), tileMaterial);
+s = new THREE.Mesh(new THREE.HexCoreGeometry(BASE_HEIGHT, -MOUNTAIN_OFFSET),
+                   tileMaterial);
+s.rotation.x = Math.PI;
+scene.add(s);
+
+s = new THREE.Mesh(new THREE.HexEdgeGeometry(BASE_HEIGHT, vo),
+                   edgeMaterial);
+scene.add(s);
+s = new THREE.Mesh(new THREE.HexEdgeGeometry(BASE_HEIGHT, vo, true/*flipped*/),
+                   edgeMaterial);
 s.rotation.x = Math.PI;
 scene.add(s);
 
@@ -73,7 +105,7 @@ stats.domElement.style.zIndex = 100;
 container.appendChild( stats.domElement );
 
 var controls = new THREE.TrackballControls( camera );
-controls.rotateSpeed = 1.0;
+controls.rotateSpeed = 3.0;
 controls.zoomSpeed = 1.2;
 controls.panSpeed = 0.8;
 
