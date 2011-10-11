@@ -27,8 +27,8 @@ Hex.prototype.clone = function() {
 };
 
 function hex_init() {
-  var NROWS = 4;
-  var NCOLS = 4;
+  var NROWS = 6;
+  var NCOLS = 10;
   var i,j;
   var v = [];
   for (i=0; i<NROWS+1; i++) {

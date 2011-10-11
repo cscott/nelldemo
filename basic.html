@@ -6,7 +6,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 <style type="text/css">
-body { background: white; color: black; padding: 0; margin: 0; }
+body { background: #bfd1e5; color: black; padding: 0; margin: 0; }
 </style>
 <script src="Three.js"></script>
 <script src="js/Detector.js"></script>
@@ -81,8 +81,8 @@ function updateHex(scene, h, addEdges) {
     }
     h.objs = [];
 
-    var xoff = (h.x-2)*1.5;
-    var yoff = (h.y-2)*-SQRT3;
+    var xoff = (h.x-(HEXES[0].length/2))*1.5;
+    var yoff = (h.y-(HEXES.length/2))*-SQRT3;
     if ((h.x%2)==1) { yoff += SQRT3/2; }
 
     var avo = [];
