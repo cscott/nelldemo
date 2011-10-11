@@ -25,6 +25,19 @@ Hex.prototype.clone = function() {
   }
   return h;
 };
+Hex.prototype.neighbors = function() {
+  var n = [ [this.x-1, this.y], [this.x+1, this.y],
+	    [this.x, this.y-1], [this.x, this.y+1] ];
+  // last two neighbors depend on whether this is an odd or even col hex
+  if ((this.x % 2)==0) {
+    n.push([this.x-1, this.y+1]);
+    n.push([this.x+1, this.y+1]);
+  } else {
+    n.push([this.x-1, this.y-1]);
+    n.push([this.x+1, this.y-1]);
+  }
+  return n;
+}
 
 function hex_init() {
   var NROWS = 6;
@@ -34,7 +47,7 @@ function hex_init() {
   for (i=0; i<NROWS+1; i++) {
     v[i] = [];
     for (j=0; j<NCOLS*2+4; j++) {
-      v[i].push(new Vertex(j, i/*, i%3*/));
+      v[i].push(new Vertex(j, i, i%3));
     }
   }
   function addV(hex, vtx) {
