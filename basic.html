@@ -127,84 +127,90 @@ for (var i=0; i<HEXES.length; i++) {
   }
 }
 
-var flippingHex = null;
-var doppelHex = null;
+var flipState = null;
+var flippingHexes = null;
+var doppelHexes = null;
 var flippingNeighbors = null;
 function flipHex() {
-  var i, s;
-  if (flippingHex == null) {
-     var row = Math.floor(Math.random()*(HEXES.length));
-     var col = Math.floor(Math.random()*(HEXES[row].length));
-     flippingHex = HEXES[row][col];
-     flippingHex.startTime = Date.now();
-     // add back side to this hex!
-     updateHex(scene, flippingHex, true/*add edges*/);
-     // make a doppelganger
-     doppelHex = flippingHex.clone();
-     updateHex(scene, doppelHex, true/*add edges*/);
-     // add back sides to all the neighbors of this hex
-     flippingNeighbors = [];
-     var n = flippingHex.neighbors();
-     for (i=0; i<n.length; i++) {
-       if (HEXES[n[i][1]] && HEXES[n[i][1]][n[i][0]]) {
-         flippingNeighbors.push(HEXES[n[i][1]][n[i][0]]);
+  var i, j, k, s;
+  if (flipState == null) {
+     flipState = { startTime: Date.now() };
+     var row = Math.floor(Math.random()*(HVERT.length));
+     var col = Math.floor(Math.random()*(HVERT[row].length));
+     flipState.hexes = HVERT[row][col].hexes;
+     if (flipState.hexes.length==0) {
+       flipState = null;
+       return; // pick another one later
+     }
+     // add back side to these hexes!
+     flipState.doppel = [];
+     flipState.neighbors = [];
+     for (i=0; i<flipState.hexes.length; i++) {
+       // add edges
+       updateHex(scene, flipState.hexes[i], true/*add edges*/);
+       // make a doppelganger
+       flipState.doppel.push(flipState.hexes[i].clone());
+       updateHex(scene, flipState.doppel[i], true/*add edges*/);
+       // add back sides to all the neighbors of these hexes
+       var n = flipState.hexes[i].neighbors();
+       for (j=0; j<n.length; j++) {
+         if (!HEXES[n[j][1]]) { continue; }
+         var nn = HEXES[n[j][1]][n[j][0]];
+         if (!nn) { continue; }
+         flipState.neighbors.push(nn);
        }
      }
-     for (i=0; i<flippingNeighbors.length; i++) {
-       updateHex(scene, flippingNeighbors[i], true);
+     // filter out redundant neighbors
+     seen = {}
+     function mkKey(hex) { return hex.x+","+hex.y; }
+     for (i=0; i<flipState.hexes.length; i++) {
+       seen[mkKey(flipState.hexes[i])] = 1;
      }
+     var nn = [];
+     for (i=0; i<flipState.neighbors.length; i++) {
+       if (seen[mkKey(flipState.neighbors[i])]) { continue; }
+       seen[mkKey(flipState.neighbors[i])] = 1;
+       nn.push(flipState.neighbors[i]);
+     }
+     flipState.neighbors = nn;
+     for (i=0; i<flipState.neighbors.length; i++) {
+       updateHex(scene, flipState.neighbors[i], true);
+     }
+     // pick axis at random
+     var axis = new THREE.Vector3(Math.random(), Math.random(), 0);
+     flipState.axis = axis.normalize();
   }
   // 0.25 degree per millisecond.
-  var rotationAmt = (Date.now() - flippingHex.startTime) * 0.25 * Math.PI/180;
-  for (i=0; i<flippingHex.objs.length; i++) {
-    flippingHex.objs[i].rotation.x = rotationAmt;
+  var rotationAmt = (Date.now() - flipState.startTime) * 0.25 * Math.PI/180;
+  var q1 = new THREE.Quaternion().setFromAxisAngle(flipState.axis, rotationAmt);
+  var q2 = new THREE.Quaternion().setFromAxisAngle(flipState.axis, Math.PI + rotationAmt);
+  for (i=0; i<flipState.hexes.length; i++) {
+    for (j=0; j<flipState.hexes[i].objs.length; j++) {
+      //flipState.hexes[i].objs[j].rotation.x = rotationAmt;
+      flipState.hexes[i].objs[j].quaternion = q1;
+      flipState.hexes[i].objs[j].useQuaternion = true;
+    }
+    for (j=0; j<flipState.doppel[i].objs.length; j++) {
+      //flipState.doppel[i].objs[j].rotation.x = Math.PI + rotationAmt;
+      flipState.doppel[i].objs[j].quaternion = q2;
+      flipState.doppel[i].objs[j].useQuaternion = true;
+    }
   }
-  for (i=0; i<doppelHex.objs.length; i++) {
-    doppelHex.objs[i].rotation.x = Math.PI + rotationAmt;
-  }
+
   if (rotationAmt > Math.PI) {
     // fully rotated
-    updateHex(scene, flippingHex); // resets rotation
-    flippingHex = null; // pick another one next time.
-    for (i=0; i<doppelHex.objs.length; i++) {
-      scene.remove(doppelHex.objs[i]);
+    for (i=0; i<flipState.hexes.length; i++) {
+      updateHex(scene, flipState.hexes[i]); // resets rotation
+      for (j=0; j<flipState.doppel[i].objs.length; j++) {
+        scene.remove(flipState.doppel[i].objs[j]);
+      }
     }
-    doppelHex = null;
-    for (i=0; i<flippingNeighbors.length; i++) {
-      updateHex(scene, flippingNeighbors[i]);
+    for (i=0; i<flipState.neighbors.length; i++) {
+      updateHex(scene, flipState.neighbors[i]);
     }
-    flippingNeighbors = null;
+    flipState = null;
   }
 }
-
-/*
-var s;
-for (var j=0; j<6; j++) {
-  s = new THREE.Mesh(new THREE.HexSegGeometry(j, j, BASE_HEIGHT, vo[j], 0),
-                     tileMaterial);
-  scene.add(s);
-
-  s = new THREE.Mesh(new THREE.HexSegGeometry(j, j, BASE_HEIGHT, vo[j], 0),
-                     tileMaterial);
-  s.rotation.x = Math.PI;
-  scene.add(s);
-}
-s = new THREE.Mesh(new THREE.HexCoreGeometry(BASE_HEIGHT, MOUNTAIN_OFFSET),
-                   tileMaterial);
-scene.add(s);
-s = new THREE.Mesh(new THREE.HexCoreGeometry(BASE_HEIGHT, -MOUNTAIN_OFFSET),
-                   tileMaterial);
-s.rotation.x = Math.PI;
-scene.add(s);
-
-s = new THREE.Mesh(new THREE.HexEdgeGeometry(BASE_HEIGHT, vo),
-                   edgeMaterial);
-scene.add(s);
-s = new THREE.Mesh(new THREE.HexEdgeGeometry(BASE_HEIGHT, vo, true/ *flipped* /),
-                   edgeMaterial);
-s.rotation.x = Math.PI;
-scene.add(s);
-*/
 
 renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
 renderer.domElement.style.position = "relative";
