@@ -13,6 +13,7 @@ body { background: white; color: black; padding: 0; margin: 0; }
 <script src="js/RequestAnimationFrame.js"></script>
 <script src="js/Stats.js"></script>
 <script src="3hex.js"></script>
+<script src="hex.js"></script>
 </head>
 
 <body>
@@ -63,9 +64,42 @@ var edgeMaterial = new THREE.MeshLambertMaterial({map:edgeTexture});
 
 var BASE_HEIGHT = .15;
 var WATER_OFFSET = -.1, GRASS_OFFSET = 0, MOUNTAIN_OFFSET = .25;
-var vo = [ GRASS_OFFSET, GRASS_OFFSET,
-           WATER_OFFSET, WATER_OFFSET,
-           MOUNTAIN_OFFSET, MOUNTAIN_OFFSET ];
+
+// initialize the hexes and start drawin' 'em!
+var x = hex_init();
+var HVERT = x[0];
+var HEXES = x[1];
+
+var vo = [ GRASS_OFFSET, WATER_OFFSET, MOUNTAIN_OFFSET ];
+
+var s;
+for (var i=0; i<HEXES.length; i++) {
+  for (var j=0; j<HEXES[i].length; j++) {
+    var xoff = (j-2)*1.5;
+    var yoff = (i-2)*-SQRT3;
+    if ((j%2)==1) { yoff += SQRT3/2; }
+    for (var k=0; k<6; k++) {
+      console.assert(HEXES[i][j].x == j);
+      console.assert(HEXES[i][j].y == i);
+      var v = HEXES[i][j].vertices[k];
+      s = new THREE.Mesh(
+          new THREE.HexSegGeometry(k, v.color*2, BASE_HEIGHT, vo[v.color], 0),
+          tileMaterial);
+      s.position.x = xoff;
+      s.position.y = yoff;
+      scene.add(s);
+    }
+    var h = HEXES[i][j];
+    s = new THREE.Mesh(new THREE.HexCoreGeometry(BASE_HEIGHT, vo[h.color]),
+                       tileMaterial);
+    s.position.x = xoff;
+    s.position.y = yoff;
+    // XXX only height reflects core type at the moment.
+    scene.add(s);
+  }
+}
+
+/*
 var s;
 for (var j=0; j<6; j++) {
   s = new THREE.Mesh(new THREE.HexSegGeometry(j, j, BASE_HEIGHT, vo[j], 0),
@@ -88,10 +122,11 @@ scene.add(s);
 s = new THREE.Mesh(new THREE.HexEdgeGeometry(BASE_HEIGHT, vo),
                    edgeMaterial);
 scene.add(s);
-s = new THREE.Mesh(new THREE.HexEdgeGeometry(BASE_HEIGHT, vo, true/*flipped*/),
+s = new THREE.Mesh(new THREE.HexEdgeGeometry(BASE_HEIGHT, vo, true/ *flipped* /),
                    edgeMaterial);
 s.rotation.x = Math.PI;
 scene.add(s);
+*/
 
 renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
 renderer.domElement.style.position = "relative";
