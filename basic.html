@@ -18,6 +18,9 @@ body { background: #bfd1e5; color: black; padding: 0; margin: 0; }
 
 <body>
 <script type="text/javascript">
+var RENDER_SMOOTH = false;
+var RENDER_FOG = true;
+
 if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 var SCREEN_WIDTH = window.innerWidth;
 var SCREEN_HEIGHT = window.innerHeight;
@@ -33,8 +36,10 @@ var mouse = { x:0, y:0 };
 var projector = new THREE.Projector();
 
 var scene = new THREE.Scene();
-//scene.fog = new THREE.FogExp2( 0xefd1b5, 0.08 );
-scene.fog = new THREE.Fog( 0xefd1b5, 1, 20 );
+if (RENDER_FOG) {
+  //scene.fog = new THREE.FogExp2( 0xefd1b5, 0.08 );
+  scene.fog = new THREE.Fog( 0xefd1b5, 1, 20 );
+}
 
 var sunLight = new THREE.DirectionalLight(0xFFFFFF);
 sunLight.position.x = 5;
@@ -51,10 +56,17 @@ var tileMaterials = [];
 var tileTextureNames = [ '2c', '2a', '2b' ];
 var i;
 for (i=0; i<tileTextureNames.length; i++) {
-  tileMaterials.push(new THREE.MeshLambertMaterial(
-    { map: THREE.ImageUtils.loadTexture('textures/tile-draft-' +
-                                        tileTextureNames[i] + '-128.png'),
-      shading: THREE.SmoothShading, color: 0xFFFFFF }));
+  var matprops = {
+    map: THREE.ImageUtils.loadTexture('textures/tile-draft-' +
+                                      tileTextureNames[i] + '-128.png'),
+    color: 0xFFFFFF
+  };
+  if (RENDER_SMOOTH) {
+    matprops.shading = THREE.SmoothShading;
+    tileMaterials.push(new THREE.MeshLambertMaterial(matprops));
+  } else {
+    tileMaterials.push(new THREE.MeshBasicMaterial(matprops));
+  }
 }
 var edgeTexture = THREE.ImageUtils.loadTexture( 'textures/acorns.jpg');
 //var edgeTexture = THREE.ImageUtils.loadTexture( 'textures/UV.jpg' );
@@ -152,25 +164,27 @@ function updateHex(scene, h, addEdges) {
       else { g = gg; }
     }
     gg = new THREE.HexCoreGeometry(BASE_HEIGHT, COLOR_OFFSET[h.color]);
-    subdivideGeometry(gg);
+    if (RENDER_SMOOTH) subdivideGeometry(gg);
     THREE.GeometryUtils.merge(g, gg);
 
     // smooth rendering by computing appropriate vertex normals.
     g.mergeVertices();
-    g.computeVertexNormals();
+    if (RENDER_SMOOTH) {
+      g.computeVertexNormals();
 
-    // further hack to smooth tile boundaries
-    function isOuterVertex(g, vidx) {
-      var v = g.vertices[vidx];
-      // midpoint of edges are 0.86 from center.  squared, that's 0.75
-      return v.position.lengthSq() > 0.74;
-    }
-    for (i=0; i<g.faces.length; i++) {
-      var face = g.faces[i];
-      console.assert(face instanceof THREE.Face3);
-      if (isOuterVertex(g, face.a)) { face.vertexNormals[0].set(0,0,1); }
-      if (isOuterVertex(g, face.b)) { face.vertexNormals[1].set(0,0,1); }
-      if (isOuterVertex(g, face.c)) { face.vertexNormals[2].set(0,0,1); }
+      // further hack to smooth tile boundaries
+      function isOuterVertex(g, vidx) {
+        var v = g.vertices[vidx];
+        // midpoint of edges are 0.86 from center.  squared, that's 0.75
+        return v.position.lengthSq() > 0.74;
+      }
+      for (i=0; i<g.faces.length; i++) {
+        var face = g.faces[i];
+        console.assert(face instanceof THREE.Face3);
+        if (isOuterVertex(g, face.a)) { face.vertexNormals[0].set(0,0,1); }
+        if (isOuterVertex(g, face.b)) { face.vertexNormals[1].set(0,0,1); }
+        if (isOuterVertex(g, face.c)) { face.vertexNormals[2].set(0,0,1); }
+      }
     }
 
     s = new THREE.Mesh(g, tileMaterials[h.color]);
