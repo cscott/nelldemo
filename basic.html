@@ -85,6 +85,49 @@ var COLOR_TABLE = [ /* mountain */ [  [5,false], [0,false], [4,true ] ],
                     /* grass */    [  [0,true ], [1,false], [2,false] ],
                     /* sea */      [  [4,false], [2,true ], [3,false] ] ];
 
+function UVavg(uv1, uv2) {
+  return new THREE.UV((uv1.u + uv2.u) / 2,
+                      (uv1.v + uv2.v) / 2);
+}
+function subdivideGeometry(g) {
+  var newf = [], newuv = [];
+  var i;
+  for (i=0; i<g.faces.length; i++) {
+    var face = g.faces[i], uv = g.faceVertexUvs[0][i];
+    console.assert(face instanceof THREE.Face3);
+    // split each edge
+    var a = g.vertices[face.a].position;
+    var b = g.vertices[face.b].position;
+    var c = g.vertices[face.c].position;
+    var ab = a.clone().addSelf(b).divideScalar(2);
+    var bc = b.clone().addSelf(c).divideScalar(2);
+    var ca = c.clone().addSelf(a).divideScalar(2);
+
+    var _ab = g.vertices.length;
+    g.vertices.push(new THREE.Vertex(ab));
+    var _bc = g.vertices.length;
+    g.vertices.push(new THREE.Vertex(bc));
+    var _ca = g.vertices.length;
+    g.vertices.push(new THREE.Vertex(ca));
+
+    var uv_ab = UVavg(uv[0], uv[1]);
+    var uv_bc = UVavg(uv[1], uv[2]);
+    var uv_ca = UVavg(uv[2], uv[0]);
+
+    newf.push(new THREE.Face3(_ca, face.a, _ab));
+    newuv.push             ([uv_ca, uv[0], uv_ab]);
+    newf.push(new THREE.Face3(_ab, face.b, _bc));
+    newuv.push             ([uv_ab, uv[1], uv_bc]);
+    newf.push(new THREE.Face3(_bc, face.c, _ca));
+    newuv.push             ([uv_bc, uv[2], uv_ca]);
+    newf.push(new THREE.Face3(_ab, _bc, _ca));
+    newuv.push             ([uv_ab, uv_bc, uv_ca]);
+  }
+  g.faces = newf;
+  g.faceVertexUvs[0] = newuv;
+  g.computeCentroids();
+  g.computeFaceNormals();
+}
 function updateHex(scene, h, addEdges) {
     var i, k, s, n;
     if (h.objs && h.objs.length) {
@@ -109,6 +152,7 @@ function updateHex(scene, h, addEdges) {
       else { g = gg; }
     }
     gg = new THREE.HexCoreGeometry(BASE_HEIGHT, COLOR_OFFSET[h.color]);
+    subdivideGeometry(gg);
     THREE.GeometryUtils.merge(g, gg);
 
     // smooth rendering by computing appropriate vertex normals.
@@ -123,6 +167,7 @@ function updateHex(scene, h, addEdges) {
     }
     for (i=0; i<g.faces.length; i++) {
       var face = g.faces[i];
+      console.assert(face instanceof THREE.Face3);
       if (isOuterVertex(g, face.a)) { face.vertexNormals[0].set(0,0,1); }
       if (isOuterVertex(g, face.b)) { face.vertexNormals[1].set(0,0,1); }
       if (isOuterVertex(g, face.c)) { face.vertexNormals[2].set(0,0,1); }
