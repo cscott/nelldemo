@@ -44,7 +44,15 @@ scene.add(sunLight);
 var ambientLight = new THREE.AmbientLight( 0x404040 );
 scene.add( ambientLight );
 
-var tileMaterial = new THREE.MeshLambertMaterial({map:THREE.ImageUtils.loadTexture( 'textures/tile-draft-1-128.png')});
+var tileMaterials = [];
+// in order: mountain, grass, sea
+var tileTextureNames = [ '2c', '2a', '2b' ];
+var i;
+for (i=0; i<tileTextureNames.length; i++) {
+  tileMaterials.push(new THREE.MeshLambertMaterial(
+    { map: THREE.ImageUtils.loadTexture('textures/tile-draft-' +
+                                        tileTextureNames[i] + '-128.png') }));
+}
 var edgeTexture = THREE.ImageUtils.loadTexture( 'textures/acorns.jpg');
 //var edgeTexture = THREE.ImageUtils.loadTexture( 'textures/UV.jpg' );
 edgeTexture.wrapS = edgeTexture.wrapT = THREE.RepeatWrapping;
@@ -94,7 +102,7 @@ function updateHex(scene, h, addEdges) {
           new THREE.HexSegGeometry(k+1, uvRot[0], uvRot[1], BASE_HEIGHT,
                                    COLOR_OFFSET[v1.color],
                                    COLOR_OFFSET[v2.color], 0),
-                         tileMaterial);
+                         tileMaterials[h.color]);
       s.position.x = xoff;
       s.position.y = yoff;
       h.objs.push(s);
@@ -102,7 +110,7 @@ function updateHex(scene, h, addEdges) {
     }
     s = new THREE.Mesh(new THREE.HexCoreGeometry(BASE_HEIGHT,
                                                  COLOR_OFFSET[h.color]),
-                       tileMaterial);
+                       tileMaterials[h.color]);
     s.position.x = xoff;
     s.position.y = yoff;
     h.objs.push(s);
