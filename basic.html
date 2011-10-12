@@ -50,6 +50,9 @@ var edgeTexture = THREE.ImageUtils.loadTexture( 'obj/mountain-tile/acorns.jpg');
 edgeTexture.wrapS = edgeTexture.wrapT = THREE.RepeatWrapping;
 var edgeMaterial = new THREE.MeshLambertMaterial({map:edgeTexture});
 
+// icon texture
+var appTexture = THREE.ImageUtils.loadTexture("tomas_arad_home.png");
+
 
 var BASE_HEIGHT = .15;
 var WATER_OFFSET = -.1, GRASS_OFFSET = 0, MOUNTAIN_OFFSET = .25;
@@ -112,6 +115,15 @@ function updateHex(scene, h, addEdges) {
       if (HEXES[n[k][1]] && HEXES[n[k][1]][n[k][0]]) continue;
       addEdges = true;
     }
+
+    // app icon
+    var sprite = new THREE.Sprite(
+      { map: appTexture, useScreenCoordinates: false, color: 0xffffff,
+        alignment: THREE.SpriteAlignment.bottomCenter });
+    sprite.position.set( xoff, yoff, BASE_HEIGHT+COLOR_OFFSET[h.color]);
+    sprite.scale.set(1/128,1/128,1/128);
+    h.objs.push(sprite);
+    scene.add(sprite);
 
     if (!addEdges) return;
 
