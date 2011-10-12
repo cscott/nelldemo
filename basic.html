@@ -31,29 +31,15 @@ camera.lookAt(new THREE.Vector3(0,0,0));
 
 var scene = new THREE.Scene();
 
-var pointLight = new THREE.PointLight(0xFFFFFF);
-pointLight.position.x = 0.2;
-pointLight.position.y = 1;
-pointLight.position.z = 2.6;
-scene.add(pointLight);
+var sunLight = new THREE.DirectionalLight(0xFFFFFF);
+sunLight.position.x = 5;
+sunLight.position.y = 5;
+sunLight.position.z = 10;
+sunLight.intensity = 0.8;
+scene.add(sunLight);
 
-pointLight = new THREE.PointLight(0xFFFFFF);
-pointLight.position.x = 0.2;
-pointLight.position.y = 1;
-pointLight.position.z = -2.6;
-scene.add(pointLight);
-
-pointLight = new THREE.PointLight(0xFFFFFF);
-pointLight.position.x = 0;
-pointLight.position.y = -5;
-pointLight.position.z = 0;
-//scene.add(pointLight);
-
-pointLight = new THREE.PointLight(0xFFFFFF);
-pointLight.position.x = 0;
-pointLight.position.y = 5;
-pointLight.position.z = 0;
-scene.add(pointLight);
+var ambientLight = new THREE.AmbientLight( 0x404040 );
+scene.add( ambientLight );
 
 var tileMaterial = new THREE.MeshLambertMaterial({map:THREE.ImageUtils.loadTexture( 'obj/mountain-tile/tile-draft-1-128.png')});
 var edgeTexture = THREE.ImageUtils.loadTexture( 'obj/mountain-tile/acorns.jpg');
