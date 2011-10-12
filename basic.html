@@ -44,14 +44,14 @@ scene.add(sunLight);
 var ambientLight = new THREE.AmbientLight( 0x404040 );
 scene.add( ambientLight );
 
-var tileMaterial = new THREE.MeshLambertMaterial({map:THREE.ImageUtils.loadTexture( 'obj/mountain-tile/tile-draft-1-128.png')});
-var edgeTexture = THREE.ImageUtils.loadTexture( 'obj/mountain-tile/acorns.jpg');
-//var edgeTexture = THREE.ImageUtils.loadTexture( 'UV.jpg' );
+var tileMaterial = new THREE.MeshLambertMaterial({map:THREE.ImageUtils.loadTexture( 'textures/tile-draft-1-128.png')});
+var edgeTexture = THREE.ImageUtils.loadTexture( 'textures/acorns.jpg');
+//var edgeTexture = THREE.ImageUtils.loadTexture( 'textures/UV.jpg' );
 edgeTexture.wrapS = edgeTexture.wrapT = THREE.RepeatWrapping;
 var edgeMaterial = new THREE.MeshLambertMaterial({map:edgeTexture});
 
 // icon texture
-var appTexture = THREE.ImageUtils.loadTexture("tomas_arad_home.png");
+var appTexture = THREE.ImageUtils.loadTexture("textures/tomas_arad_home.png");
 
 
 var BASE_HEIGHT = .15;
