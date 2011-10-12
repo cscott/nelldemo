@@ -29,6 +29,9 @@ camera.position.z = 5;
 camera.position.y = -5;
 camera.lookAt(new THREE.Vector3(0,0,0));
 
+var mouse = { x:0, y:0 };
+var projector = new THREE.Projector();
+
 var scene = new THREE.Scene();
 
 var sunLight = new THREE.DirectionalLight(0xFFFFFF);
@@ -271,8 +274,18 @@ controls.dynamicDampingFactor = 0.3;
 
 controls.keys = [ 65, 83, 68 ];
 
+function onDocumentMouseMove( event ) {
+  event.preventDefault();
+  mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+  mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+};
+
 function animate() {
   requestAnimationFrame( animate );
+
+  var vector = new THREE.Vector3( mouse.x, mouse.y, 0.5 );
+  projector.unprojectVector( vector, camera );
+  var ray = new THREE.Ray( camera.position, vector.subSelf( camera.position ).normalize() );
 
   render();
   stats.update();
@@ -284,6 +297,7 @@ function render() {
 
   renderer.render( scene, camera );
 }
+container.onmousemove = onDocumentMouseMove;
 animate();
 </script>
 </body>
