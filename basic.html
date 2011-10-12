@@ -53,7 +53,8 @@ var i;
 for (i=0; i<tileTextureNames.length; i++) {
   tileMaterials.push(new THREE.MeshLambertMaterial(
     { map: THREE.ImageUtils.loadTexture('textures/tile-draft-' +
-                                        tileTextureNames[i] + '-128.png') }));
+                                        tileTextureNames[i] + '-128.png'),
+      shading: THREE.SmoothShading, color: 0xFFFFFF }));
 }
 var edgeTexture = THREE.ImageUtils.loadTexture( 'textures/acorns.jpg');
 //var edgeTexture = THREE.ImageUtils.loadTexture( 'textures/UV.jpg' );
@@ -97,26 +98,40 @@ function updateHex(scene, h, addEdges) {
     var yoff = (h.y-(HEXES.length/2))*-SQRT3;
     if ((h.x%2)==1) { yoff += SQRT3/2; }
 
+    var g = null, gg;
     for (k=0; k<6; k++) {
       var v1 = h.vertices[(k)%6], v2 = h.vertices[(k+1)%6];
       var uvRot = COLOR_TABLE[v1.color][v2.color];
-      s = new THREE.Mesh(
-          new THREE.HexSegGeometry(k+1, uvRot[0], uvRot[1], BASE_HEIGHT,
-                                   COLOR_OFFSET[v1.color],
-                                   COLOR_OFFSET[v2.color], 0),
-                         tileMaterials[h.color]);
-      s.position.x = xoff;
-      s.position.y = yoff;
-      h.objs.push(s);
-      scene.add(s);
+      gg = new THREE.HexSegGeometry(k+1, uvRot[0], uvRot[1], BASE_HEIGHT,
+                                    COLOR_OFFSET[v1.color],
+                                    COLOR_OFFSET[v2.color], 0);
+      if (g) { THREE.GeometryUtils.merge(g, gg); }
+      else { g = gg; }
     }
-    s = new THREE.Mesh(new THREE.HexCoreGeometry(BASE_HEIGHT,
-                                                 COLOR_OFFSET[h.color]),
-                       tileMaterials[h.color]);
+    gg = new THREE.HexCoreGeometry(BASE_HEIGHT, COLOR_OFFSET[h.color]);
+    THREE.GeometryUtils.merge(g, gg);
+
+    // smooth rendering by computing appropriate vertex normals.
+    g.mergeVertices();
+    g.computeVertexNormals();
+
+    // further hack to smooth tile boundaries
+    function isOuterVertex(g, vidx) {
+      var v = g.vertices[vidx];
+      // midpoint of edges are 0.86 from center.  squared, that's 0.75
+      return v.position.lengthSq() > 0.74;
+    }
+    for (i=0; i<g.faces.length; i++) {
+      var face = g.faces[i];
+      if (isOuterVertex(g, face.a)) { face.vertexNormals[0].set(0,0,1); }
+      if (isOuterVertex(g, face.b)) { face.vertexNormals[1].set(0,0,1); }
+      if (isOuterVertex(g, face.c)) { face.vertexNormals[2].set(0,0,1); }
+    }
+
+    s = new THREE.Mesh(g, tileMaterials[h.color]);
     s.position.x = xoff;
     s.position.y = yoff;
     h.objs.push(s);
-    // XXX only height reflects core type at the moment.
     scene.add(s);
 
     // always add edges if this is a boundary hex.
