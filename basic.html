@@ -12,6 +12,7 @@ body { background: #bfd1e5; color: black; padding: 0; margin: 0; }
 <script src="js/Detector.js"></script>
 <script src="js/RequestAnimationFrame.js"></script>
 <script src="js/Stats.js"></script>
+<script src="js/ShaderExtras.js"></script>
 <script src="3hex.js"></script>
 <script src="hex.js"></script>
 </head>
@@ -20,14 +21,20 @@ body { background: #bfd1e5; color: black; padding: 0; margin: 0; }
 <script type="text/javascript">
 var RENDER_SMOOTH = false;
 var RENDER_FOG = true;
+var FOG_COLOR = 0xBFD1E5; // 0xEFD1B5
+var RENDER_SHADOWS = true;
+var SHADOW_MAP_SIZE = 512;
+var DEBUG_SHADOW_MAP = false;
 
 if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 var SCREEN_WIDTH = window.innerWidth;
 var SCREEN_HEIGHT = window.innerHeight;
 var container = document.body;
 var renderer = new THREE.WebGLRenderer();
+renderer.autoClear = false; // for shadowmap (two passes)
+
 var camera = new THREE.PerspectiveCamera(45, SCREEN_WIDTH/SCREEN_HEIGHT,
-                                         1, 1000);
+                                         0.01, 2000);
 camera.position.z = 5;
 camera.position.y = -5;
 camera.lookAt(new THREE.Vector3(0,0,0));
@@ -37,19 +44,20 @@ var projector = new THREE.Projector();
 
 var scene = new THREE.Scene();
 if (RENDER_FOG) {
-  //scene.fog = new THREE.FogExp2( 0xefd1b5, 0.08 );
-  scene.fog = new THREE.Fog( 0xefd1b5, 1, 20 );
+  //scene.fog = new THREE.FogExp2( FOG_COLOR, 0.08 );
+  scene.fog = new THREE.Fog( FOG_COLOR, 1, 20 );
+  renderer.setClearColor( scene.fog.color, 1 );
 }
-
-var sunLight = new THREE.DirectionalLight(0xFFFFFF);
-sunLight.position.x = 5;
-sunLight.position.y = 5;
-sunLight.position.z = 10;
-sunLight.intensity = 0.8;
-scene.add(sunLight);
 
 var ambientLight = new THREE.AmbientLight( 0x404040 );
 scene.add( ambientLight );
+
+var spotLight = new THREE.SpotLight(0xFFFFFF);
+spotLight.position.set( 15, 15, 4 );
+spotLight.position.normalize().multiplyScalar(22);
+spotLight.target.position.set( 0, 0, 0 );
+spotLight.castShadow = true;
+scene.add(spotLight);
 
 var tileMaterials = [];
 // in order: mountain, grass, sea
@@ -176,7 +184,7 @@ function updateHex(scene, h, addEdges) {
       function isOuterVertex(g, vidx) {
         var v = g.vertices[vidx];
         // midpoint of edges are 0.86 from center.  squared, that's 0.75
-        return v.position.lengthSq() > 0.74;
+        return (v.position.x * v.position.x)+(v.position.y*v.position.y) > 0.74;
       }
       for (i=0; i<g.faces.length; i++) {
         var face = g.faces[i];
@@ -190,6 +198,8 @@ function updateHex(scene, h, addEdges) {
     s = new THREE.Mesh(g, tileMaterials[h.color]);
     s.position.x = xoff;
     s.position.y = yoff;
+    s.castShadow = true;
+    s.receiveShadow = true;
     h.objs.push(s);
     scene.add(s);
 
@@ -352,6 +362,59 @@ renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
 renderer.domElement.style.position = "relative";
 container.appendChild(renderer.domElement);
 
+if (RENDER_SHADOWS) {
+  // adjust shadowCameraNear to make depth scaling work right for shadowMap
+  renderer.shadowCameraNear = 0.001;
+  renderer.shadowCameraFar = camera.far;
+  // "uncomment to see light frustum boundaries" in WebGLShaders.js
+  // in order to adjust this
+  renderer.shadowCameraFov = 50;
+  // give better shadows at around 10:00 (shadows which don't detach from
+  // the mountains) by tweaking up the shadowMapBias *very* slightly
+  renderer.shadowMapBias = 0.003905;
+  //renderer.shadowMapDarkness = 0.5;
+  renderer.shadowMapWidth = SHADOW_MAP_SIZE;
+  renderer.shadowMapHeight = SHADOW_MAP_SIZE;
+
+  renderer.shadowMapEnabled = true;
+  renderer.shadowMapSoft = true;
+
+  if (DEBUG_SHADOW_MAP) {
+    // add a test item to the scene
+    var planeMaterial = new THREE.MeshLambertMaterial( { color: 0xffdd99 } );
+    var mtest = new THREE.Mesh(new THREE.CubeGeometry(1,1,1), planeMaterial);
+    mtest.position.z = 1;
+    mtest.castShadow = true;
+    scene.add(mtest);
+
+    // show shadow map
+    // (borrowed from webgl_shadowmap.html demo; don't expect me to understand
+    //  how this works!)
+    cameraOrtho = new THREE.OrthographicCamera(
+      SCREEN_WIDTH / - 2, SCREEN_WIDTH / 2,
+      SCREEN_HEIGHT / 2, SCREEN_HEIGHT / - 2, -10, 1000 );
+    cameraOrtho.position.z = 10;
+
+    var shader = THREE.ShaderExtras[ "screen" ];
+    var uniforms = new THREE.UniformsUtils.clone( shader.uniforms );
+
+    hudMaterial = new THREE.ShaderMaterial( {
+      vertexShader: shader.vertexShader, fragmentShader: shader.fragmentShader,
+      uniforms: uniforms } );
+
+    var hudGeo = new THREE.PlaneGeometry(
+      SHADOW_MAP_SIZE / 2, SHADOW_MAP_SIZE / 2 );
+    var hudMesh = new THREE.Mesh( hudGeo, hudMaterial );
+    hudMesh.position.x = ( SCREEN_WIDTH - SHADOW_MAP_SIZE / 2 ) * -0.5;
+    hudMesh.position.y = ( SCREEN_HEIGHT - SHADOW_MAP_SIZE / 2 ) * -0.5;
+
+    sceneHUD = new THREE.Scene();
+    sceneHUD.add( hudMesh );
+
+    cameraOrtho.lookAt( sceneHUD.position );
+  }
+}
+
 stats = new Stats();
 stats.domElement.style.position = 'absolute';
 stats.domElement.style.top = '0px';
@@ -361,7 +424,7 @@ container.appendChild( stats.domElement );
 
 var controls = new THREE.TrackballControls( camera );
 controls.rotateSpeed = 3.0;
-controls.zoomSpeed = 1.2;
+controls.zoomSpeed = 5;
 controls.panSpeed = 0.8;
 
 controls.noZoom = false;
@@ -393,7 +456,15 @@ function render() {
   if (controls) controls.update();
   flipHex();
 
+  renderer.clear();
   renderer.render( scene, camera );
+
+  if (RENDER_SHADOWS && DEBUG_SHADOW_MAP) {
+    // debug shadow map
+    hudMaterial.uniforms.tDiffuse.texture = renderer.shadowMap[ 0 ];
+    renderer.render( sceneHUD, cameraOrtho);
+  }
+
 }
 container.onmousemove = onDocumentMouseMove;
 animate();
