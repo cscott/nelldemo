@@ -19,14 +19,15 @@ body { background: #bfd1e5; color: black; padding: 0; margin: 0; }
 
 <body>
 <script type="text/javascript">
-var RENDER_SMOOTH = false;
+var RENDER_SMOOTH = true;
 var RENDER_FOG = true;
 var FOG_COLOR = 0xBFD1E5; // 0xEFD1B5
 var RENDER_SHADOWS = true;
 var SHADOW_MAP_SIZE = 512;
 var DEBUG_SHADOW_MAP = false;
+var REALTIME_SPEEDUP = 24*60; // 1 day = 1 minute, for day/night cycle
 
-if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+//if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 var SCREEN_WIDTH = window.innerWidth;
 var SCREEN_HEIGHT = window.innerHeight;
 var container = document.body;
@@ -39,13 +40,14 @@ camera.position.z = 5;
 camera.position.y = -5;
 camera.lookAt(new THREE.Vector3(0,0,0));
 
+var daytime = .23; // [0-1) where 0=midnight, 0.5=noon
 var mouse = { x:0, y:0 };
 var projector = new THREE.Projector();
 
 var scene = new THREE.Scene();
 if (RENDER_FOG) {
   //scene.fog = new THREE.FogExp2( FOG_COLOR, 0.08 );
-  scene.fog = new THREE.Fog( FOG_COLOR, 1, 20 );
+  scene.fog = new THREE.Fog( FOG_COLOR, 1, 30 );
   renderer.setClearColor( scene.fog.color, 1 );
 }
 
@@ -83,7 +85,7 @@ var edgeMaterial = new THREE.MeshLambertMaterial({map:edgeTexture});
 var waterTexture = THREE.ImageUtils.loadTexture( 'textures/water-texture-128.png' );
 waterTexture.wrapS = waterTexture.wrapT = THREE.RepeatWrapping;
 waterTexture.repeat.set(40,40);
-var waterMaterial = new THREE.MeshBasicMaterial({map:waterTexture});
+var waterMaterial = new THREE.MeshLambertMaterial({map:waterTexture});
 
 // icon texture
 var appTexture = THREE.ImageUtils.loadTexture("textures/tomas_arad_home.png");
@@ -472,9 +474,81 @@ function animate() {
   stats.update();
 }
 
+function clamp( x, a, b ) { return x < a ? a : ( x > b ? b : x ); }
+
+function map_linear( x, sa, sb, ea, eb ) {
+  return ( x  - sa ) * ( eb - ea ) / ( sb - sa ) + ea;
+};
+
+var lastFrameTime = Date.now();
+var FIXED_TIME=null;
 function render() {
+  var elapsed = Date.now() - lastFrameTime;
+  lastFrameTime += elapsed;
+
+  // move camera
   if (controls) controls.update();
+  // animate terrain mutation
   flipHex();
+  // day/night cycle
+  daytime += elapsed*REALTIME_SPEEDUP/(1000*60*60*24);
+  if (daytime >= 1) { daytime -= Math.floor(daytime); }
+
+  var v = clamp(0.5-Math.cos(daytime*2*Math.PI)*1.8, 0.1, 0.9);
+  var skyColor = new THREE.Color().setHSV( 0.51, 0.5, v );
+  if (RENDER_FOG) { scene.fog.color = skyColor; }
+  renderer.setClearColor( skyColor, 1 );
+
+  if (FIXED_TIME != null) daytime = FIXED_TIME;
+  var cues = [
+   //time sun angle intensity, r,   g,   b,  ambient,  shadow
+   [0/24,  90,       0.45,    0.2, 0.2, 1.0, 0.07,     0.5],
+   [2/24,  85,       0.4,     0.2, 0.2, 1.0, 0.07,     0.5],
+   [5.5/24, 0,       0.0,     0.2, 0.2, 0.2, 0.10,     0.0],
+   [6/24,   0,       0.0,     1.0, 0.0, 0.0, 0.10,     0.5],
+   [6.5/24, 4,       1.20,    1.0, 0.0, 0.0, 0.08,     0.8],
+   [7/24,  10,       1.75,    1.0, 0.0, 0.0, 0.07,     0.8],
+   [8/24,  30,       1.0,     1.0, 0.4, 0.4, 0.20,     0.8],
+   [12/24, 90,       1.0,     1.0, 1.0, 0.7, 0.33,     1.0],
+   [16/24,150,       1.0,     1.0, 0.5, 0.5, 0.30,     0.8],
+   [17/24,170,       1.75,    1.0, 0.0, 0.0, 0.07,     0.8],
+   [17.5/24,176,     1.20,    1.0, 0.0, 0.0, 0.08,     0.8],
+   [18/24,180,       0.0,     1.0, 0.0, 0.0, 0.10,     0.5],
+   [18.5/24,180,     0.0,     0.2, 0.2, 0.2, 0.10,     0.0],
+   [22/24,105,       0.4,     0.2, 0.2, 1.0, 0.07,     0.5],
+   [24/24, 90,       0.45,    0.2, 0.2, 1.0, 0.07,     0.5] ];
+
+  // find the right two entries in the cue sheet
+  for (var i=1; i<cues.length; i++) {
+   if (cues[i][0] >= daytime) break;
+  }
+  var sunAngle = map_linear(daytime,
+                            cues[i-1][0], cues[i][0],
+                            cues[i-1][1], cues[i][1]);
+  sunAngle = -sunAngle*Math.PI/180;
+  spotLight.intensity = map_linear(daytime,
+                                   cues[i-1][0], cues[i][0],
+                                   cues[i-1][2], cues[i][2]);
+  spotLight.color.setRGB(map_linear(daytime,
+                                    cues[i-1][0], cues[i][0],
+                                    cues[i-1][3], cues[i][3]),
+                         map_linear(daytime,
+                                    cues[i-1][0], cues[i][0],
+                                    cues[i-1][4], cues[i][4]),
+                         map_linear(daytime,
+                                    cues[i-1][0], cues[i][0],
+                                    cues[i-1][5], cues[i][5]));
+  var m = new THREE.Matrix4().setRotationAxis(new THREE.Vector3(-1,1,0), sunAngle);
+  spotLight.position.set( 15, 15, 0 );
+  m.multiplyVector3(spotLight.position);
+
+  ambientLight.color.setHSV( 0, 0, map_linear(daytime,
+                                    cues[i-1][0], cues[i][0],
+                                    cues[i-1][6], cues[i][6]));
+
+  var dark = map_linear(daytime, cues[i-1][0], cues[i][0],
+                                 cues[i-1][7], cues[i][7]);
+  renderer.shadowMapDarkness = dark;
 
   renderer.clear();
   renderer.render( scene, camera );
