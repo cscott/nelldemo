@@ -357,6 +357,8 @@ function flipHex() {
     flipState = null;
   }
 }
+var ground = new THREE.Mesh(new THREE.PlaneGeometry(100,100), edgeMaterial);
+scene.add(ground);
 
 renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
 renderer.domElement.style.position = "relative";
@@ -440,6 +442,19 @@ function onDocumentMouseMove( event ) {
   mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
   mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
 };
+
+function onWindowResize( event ) {
+  uniforms.resolution.value.x = window.innerWidth;
+  uniforms.resolution.value.y = window.innerHeight;
+
+  renderer.setSize( window.innerWidth, window.innerHeight );
+
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+
+//composer.reset();
+}
+
 
 function animate() {
   requestAnimationFrame( animate );
