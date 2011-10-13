@@ -6,7 +6,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 <style type="text/css">
-body { background: #bfd1e5; color: black; padding: 0; margin: 0; }
+body { background: black/*letter boxing*/;
+       color: black; padding: 0; margin: 0; }
+canvas { display: block; padding: 0; margin: 0; }
 </style>
 <script src="Three.js"></script>
 <script src="js/Detector.js"></script>
@@ -28,13 +30,12 @@ var DEBUG_SHADOW_MAP = false;
 var REALTIME_SPEEDUP = 24*60; // 1 day = 1 minute, for day/night cycle
 
 //if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
-var SCREEN_WIDTH = window.innerWidth;
-var SCREEN_HEIGHT = window.innerHeight;
+var SCREEN_ASPECT_RATIO = 4/3;
 var container = document.body;
 var renderer = new THREE.WebGLRenderer();
 renderer.autoClear = false; // for shadowmap (two passes)
 
-var camera = new THREE.PerspectiveCamera(45, SCREEN_WIDTH/SCREEN_HEIGHT,
+var camera = new THREE.PerspectiveCamera(45, SCREEN_ASPECT_RATIO,
                                          0.01, 2000);
 camera.position.z = 5;
 camera.position.y = -5;
@@ -367,7 +368,6 @@ var ground = new THREE.Mesh(new THREE.PlaneGeometry(100,100), waterMaterial);
 ground.position.z = BASE_HEIGHT + WATER_OFFSET;
 scene.add(ground);
 
-renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
 renderer.domElement.style.position = "relative";
 container.appendChild(renderer.domElement);
 
@@ -399,6 +399,8 @@ if (RENDER_SHADOWS) {
     // show shadow map
     // (borrowed from webgl_shadowmap.html demo; don't expect me to understand
     //  how this works!)
+    // XXX: this should resize onWindowResize, but I'm lazy.
+    var SCREEN_WIDTH = window.innerWidth, SCREEN_HEIGHT = window.innerHeight;
     cameraOrtho = new THREE.OrthographicCamera(
       SCREEN_WIDTH / - 2, SCREEN_WIDTH / 2,
       SCREEN_HEIGHT / 2, SCREEN_HEIGHT / - 2, -10, 1000 );
@@ -451,15 +453,22 @@ function onDocumentMouseMove( event ) {
 };
 
 function onWindowResize( event ) {
-  uniforms.resolution.value.x = window.innerWidth;
-  uniforms.resolution.value.y = window.innerHeight;
+  // force aspect ratio to 4:3 for accurate reflection of Nell demo
+  var w = window.innerWidth, h = window.innerHeight;
+  if (w > h*SCREEN_ASPECT_RATIO) {
+    w = Math.round(h*SCREEN_ASPECT_RATIO);
+  } else if (w < h*SCREEN_ASPECT_RATIO) {
+    h = Math.round(w/SCREEN_ASPECT_RATIO);
+  }
 
-  renderer.setSize( window.innerWidth, window.innerHeight );
+  renderer.setSize( w, h );
+  // center the element, for nice letter boxing.
+  renderer.domElement.style.left=Math.floor((window.innerWidth-w)/2)+"px";
+  renderer.domElement.style.top=Math.floor((window.innerHeight-h)/2)+"px";
 
-  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.aspect = w/h;
   camera.updateProjectionMatrix();
-
-//composer.reset();
+  console.log(w, h, window.innerWidth, window.innerHeight);
 }
 
 
@@ -563,7 +572,9 @@ function render() {
   }
 
 }
-container.onmousemove = onDocumentMouseMove;
+container.addEventListener( 'mousemove', onDocumentMouseMove, false );
+window.addEventListener( 'resize', onWindowResize, false );
+onWindowResize();
 animate();
 </script>
 </body>
