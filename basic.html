@@ -80,6 +80,10 @@ var edgeTexture = THREE.ImageUtils.loadTexture( 'textures/acorns.jpg');
 //var edgeTexture = THREE.ImageUtils.loadTexture( 'textures/UV.jpg' );
 edgeTexture.wrapS = edgeTexture.wrapT = THREE.RepeatWrapping;
 var edgeMaterial = new THREE.MeshLambertMaterial({map:edgeTexture});
+var waterTexture = THREE.ImageUtils.loadTexture( 'textures/water-texture-128.png' );
+waterTexture.wrapS = waterTexture.wrapT = THREE.RepeatWrapping;
+waterTexture.repeat.set(40,40);
+var waterMaterial = new THREE.MeshBasicMaterial({map:waterTexture});
 
 // icon texture
 var appTexture = THREE.ImageUtils.loadTexture("textures/tomas_arad_home.png");
@@ -357,7 +361,8 @@ function flipHex() {
     flipState = null;
   }
 }
-var ground = new THREE.Mesh(new THREE.PlaneGeometry(100,100), edgeMaterial);
+var ground = new THREE.Mesh(new THREE.PlaneGeometry(100,100), waterMaterial);
+ground.position.z = BASE_HEIGHT + WATER_OFFSET;
 scene.add(ground);
 
 renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
