@@ -1,9 +1,4 @@
-var RENDER_SMOOTH = true;
-var RENDER_FOG = true;
 var FOG_COLOR = 0xBFD1E5; // 0xEFD1B5
-var RENDER_SHADOWS = true;
-var SHADOW_MAP_SIZE = 512;
-var DEBUG_SHADOW_MAP = false;
 var REALTIME_SPEEDUP = 24*60; // 1 day = 1 minute, for day/night cycle
 
 //if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
@@ -90,42 +85,16 @@ init_lights(scene);
 var stats = init_stats(container);
 var controls = init_controls(scene);
 
-var tileMaterials = [];
-// in order: mountain, grass, sea
-var tileTextureNames = [ '2c', '2a', '2b' ];
-var i;
-for (i=0; i<tileTextureNames.length; i++) {
-  var matprops = {
-    map: THREE.ImageUtils.loadTexture('textures/tile-draft-' +
-                                      tileTextureNames[i] + '-128.png'),
-    color: 0xFFFFFF
-  };
-  if (RENDER_SMOOTH) {
-    matprops.shading = THREE.SmoothShading;
-    tileMaterials.push(new THREE.MeshLambertMaterial(matprops));
-  } else {
-    tileMaterials.push(new THREE.MeshBasicMaterial(matprops));
-  }
-}
-var edgeTexture = THREE.ImageUtils.loadTexture( 'textures/acorns.jpg');
-//var edgeTexture = THREE.ImageUtils.loadTexture( 'textures/UV.jpg' );
-edgeTexture.wrapS = edgeTexture.wrapT = THREE.RepeatWrapping;
-var edgeMaterial = new THREE.MeshLambertMaterial({map:edgeTexture});
-var waterTexture = THREE.ImageUtils.loadTexture( 'textures/water-texture-128.png' );
-waterTexture.wrapS = waterTexture.wrapT = THREE.RepeatWrapping;
-waterTexture.repeat.set(40,40);
-var waterMaterial = new THREE.MeshLambertMaterial({map:waterTexture});
-
-// icon texture
-var appTexture = THREE.ImageUtils.loadTexture("textures/tomas_arad_home.png");
-
-
-var BASE_HEIGHT = .15;
-var WATER_OFFSET = -.1, GRASS_OFFSET = 0, MOUNTAIN_OFFSET = .25;
 
 function init_ground(scene) {
+  var waterTexture = THREE.ImageUtils.loadTexture(
+    'textures/water-texture-128.png' );
+  waterTexture.wrapS = waterTexture.wrapT = THREE.RepeatWrapping;
+  waterTexture.repeat.set(40,40);
+  var waterMaterial = new THREE.MeshLambertMaterial({map:waterTexture});
+
   var ground = new THREE.Mesh(new THREE.PlaneGeometry(100,100), waterMaterial);
-  ground.position.z = BASE_HEIGHT + WATER_OFFSET;
+  ground.position.z = WorldConst.BASE_HEIGHT + WorldConst.WATER_OFFSET;
   scene.add(ground);
   return ground;
 }
@@ -133,20 +102,6 @@ var ground = init_ground(scene);
 
 // initialize the hexes and start drawin' 'em!
 var world = new World();
-var CENTER_HEX_X = 2;
-var CENTER_HEX_Y = 2.4; // visual tweak for ortho perspective
-
-// A = mountain, B = grass, C = sea
-var COLOR_OFFSET = [ MOUNTAIN_OFFSET, GRASS_OFFSET, WATER_OFFSET ];
-// 0 -> mountain->grass
-// 1 -> grass->grass
-// 2 -> grass->water
-// 3 -> water->water
-// 4 -> water->mountain
-// 5 -> mountain->mountain
-var COLOR_TABLE = [ /* mountain */ [  [5,false], [0,false], [4,true ] ],
-                    /* grass */    [  [0,true ], [1,false], [2,false] ],
-                    /* sea */      [  [4,false], [2,true ], [3,false] ] ];
 
 // make borders of world all ocean
 (function () {
@@ -155,148 +110,14 @@ var COLOR_TABLE = [ /* mountain */ [  [5,false], [0,false], [4,true ] ],
       var v = world.vertices[i][j];
       if (!v) continue;
       if (world.isBorderVertex(v)) {
-	v.color = 2; /* sea */
+	v.color = WorldConst.COLOR_WATER; /* ocean */
       }
     }
   }
 })();
 
-function UVavg(uv1, uv2) {
-  return new THREE.UV((uv1.u + uv2.u) / 2,
-                      (uv1.v + uv2.v) / 2);
-}
-function subdivideGeometry(g) {
-  var newf = [], newuv = [];
-  var i;
-  for (i=0; i<g.faces.length; i++) {
-    var face = g.faces[i], uv = g.faceVertexUvs[0][i];
-    console.assert(face instanceof THREE.Face3);
-    // split each edge
-    var a = g.vertices[face.a].position;
-    var b = g.vertices[face.b].position;
-    var c = g.vertices[face.c].position;
-    var ab = a.clone().addSelf(b).divideScalar(2);
-    var bc = b.clone().addSelf(c).divideScalar(2);
-    var ca = c.clone().addSelf(a).divideScalar(2);
-
-    var _ab = g.vertices.length;
-    g.vertices.push(new THREE.Vertex(ab));
-    var _bc = g.vertices.length;
-    g.vertices.push(new THREE.Vertex(bc));
-    var _ca = g.vertices.length;
-    g.vertices.push(new THREE.Vertex(ca));
-
-    var uv_ab = UVavg(uv[0], uv[1]);
-    var uv_bc = UVavg(uv[1], uv[2]);
-    var uv_ca = UVavg(uv[2], uv[0]);
-
-    newf.push(new THREE.Face3(_ca, face.a, _ab));
-    newuv.push             ([uv_ca, uv[0], uv_ab]);
-    newf.push(new THREE.Face3(_ab, face.b, _bc));
-    newuv.push             ([uv_ab, uv[1], uv_bc]);
-    newf.push(new THREE.Face3(_bc, face.c, _ca));
-    newuv.push             ([uv_bc, uv[2], uv_ca]);
-    newf.push(new THREE.Face3(_ab, _bc, _ca));
-    newuv.push             ([uv_ab, uv_bc, uv_ca]);
-  }
-  g.faces = newf;
-  g.faceVertexUvs[0] = newuv;
-  g.computeCentroids();
-  g.computeFaceNormals();
-}
-function updateHex(scene, h, addEdges) {
-    var i, k, s, n;
-    if (h.objs && h.objs.length) {
-      for (i=0; i<h.objs.length; i++) {
-        scene.remove(h.objs[i]);
-      }
-    }
-    h.objs = [];
-
-    var xoff = (h.x-CENTER_HEX_X)*1.5;
-    var yoff = (h.y-CENTER_HEX_Y)*-SQRT3;
-    if ((h.x%2)==1) { yoff += SQRT3/2; }
-
-    var g = null, gg;
-    for (k=0; k<6; k++) {
-      var v1 = h.vertices[(k)%6], v2 = h.vertices[(k+1)%6];
-      var uvRot = COLOR_TABLE[v1.color][v2.color];
-      gg = new THREE.HexSegGeometry(k+1, uvRot[0], uvRot[1], BASE_HEIGHT,
-                                    COLOR_OFFSET[v1.color],
-                                    COLOR_OFFSET[v2.color], 0);
-      if (g) { THREE.GeometryUtils.merge(g, gg); }
-      else { g = gg; }
-    }
-    gg = new THREE.HexCoreGeometry(BASE_HEIGHT, COLOR_OFFSET[h.color]);
-    if (RENDER_SMOOTH) subdivideGeometry(gg);
-    THREE.GeometryUtils.merge(g, gg);
-
-    // smooth rendering by computing appropriate vertex normals.
-    g.mergeVertices();
-    if (RENDER_SMOOTH) {
-      g.computeVertexNormals();
-
-      // further hack to smooth tile boundaries
-      function isOuterVertex(g, vidx) {
-        var v = g.vertices[vidx];
-        // midpoint of edges are 0.86 from center.  squared, that's 0.75
-        return (v.position.x * v.position.x)+(v.position.y*v.position.y) > 0.74;
-      }
-      for (i=0; i<g.faces.length; i++) {
-        var face = g.faces[i];
-        console.assert(face instanceof THREE.Face3);
-        if (isOuterVertex(g, face.a)) { face.vertexNormals[0].set(0,0,1); }
-        if (isOuterVertex(g, face.b)) { face.vertexNormals[1].set(0,0,1); }
-        if (isOuterVertex(g, face.c)) { face.vertexNormals[2].set(0,0,1); }
-      }
-    }
-
-    s = new THREE.Mesh(g, tileMaterials[h.color]);
-    s.position.x = xoff;
-    s.position.y = yoff;
-    s.castShadow = true;
-    s.receiveShadow = true;
-    h.objs.push(s);
-    scene.add(s);
-
-    // always add edges if this is a boundary hex.
-    if (world.isBorderHex(h)) {
-      addEdges = true;
-    }
-
-    // app icon
-    /*
-    var sprite = new THREE.Sprite(
-      { map: appTexture, useScreenCoordinates: false, color: 0xffffff,
-        alignment: THREE.SpriteAlignment.bottomCenter });
-    sprite.position.set( xoff, yoff, BASE_HEIGHT+COLOR_OFFSET[h.color]);
-    sprite.scale.set(1/128,1/128,1/128);
-    h.objs.push(sprite);
-    scene.add(sprite);
-    */
-
-    if (!addEdges) return;
-
-    var avo = [];
-    for (k=0; k<6; k++) {
-      var v = h.vertices[k];
-      avo.push(COLOR_OFFSET[v.color]);
-    }
-    s = new THREE.Mesh(new THREE.HexEdgeGeometry(BASE_HEIGHT, avo),
-                       edgeMaterial);
-    s.position.x = xoff;
-    s.position.y = yoff;
-    h.objs.push(s);
-    scene.add(s);
-}
-
-for (var i=0; i<world.hexes.length; i++) {
-  for (var j=0; j<world.hexes[i].length; j++) {
-    if (world.hexes[i][j]) {
-      updateHex(scene, world.hexes[i][j]);
-    }
-  }
-}
+var worldobj = new WorldObject(world);
+scene.add(worldobj);
 
 var flipState = null;
 var flippingHexes = null;
@@ -343,9 +164,9 @@ function flipHex() {
      flipState.neighbors = [];
      for (i=0; i<flipState.hexes.length; i++) {
        // add edges
-       updateHex(scene, flipState.hexes[i], true/*add edges*/);
+       worldobj.updateHex(world, flipState.hexes[i], true/*add edges*/);
        // make a doppelganger
-       updateHex(scene, flipState.doppel[i], true/*add edges*/);
+       worldobj.updateHex(world, flipState.doppel[i], true/*add edges*/);
        // find all neighbors
        var n = flipState.hexes[i].neighbors();
        for (j=0; j<n.length; j++) {
@@ -370,7 +191,7 @@ function flipHex() {
      flipState.neighbors = nn;
      // add edges to neighbors
      for (i=0; i<flipState.neighbors.length; i++) {
-       updateHex(scene, flipState.neighbors[i], true);
+       worldobj.updateHex(world, flipState.neighbors[i], true);
      }
   }
   // 0.25 degree per millisecond.
@@ -398,13 +219,13 @@ function flipHex() {
       for (j=0; j<h.vertices.length; j++) {
         h.vertices[j].color = d.vertices[j].color;
       }
-      updateHex(scene, h); // resets rotation, color, etc
+      worldobj.updateHex(world, h); // resets rotation, color, etc
       for (j=0; j<d.objs.length; j++) {
         scene.remove(d.objs[j]);
       }
     }
     for (i=0; i<flipState.neighbors.length; i++) {
-      updateHex(scene, flipState.neighbors[i]);
+      worldobj.updateHex(world, flipState.neighbors[i]);
     }
     flipState = null;
   }

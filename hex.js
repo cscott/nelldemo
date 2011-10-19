@@ -114,6 +114,11 @@ function World() {
   }
   this.hexes = h;
   this.vertices = v;
+  this.CENTER_HEX_X = Math.floor(this.SIZE/2);
+  this.CENTER_HEX_Y = Math.floor(this.SIZE/2);
+  // XXX move this elsewhere, this is a visual appearance tweak to center
+  // the world better in the camera view
+  this.CENTER_HEX_Y += 0.4;
 }
 World.prototype = {}
 World.prototype.constructor = World;
