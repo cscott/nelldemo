@@ -25,18 +25,18 @@ function init_renderer(container) {
 function init_scene(renderer) {
   var scene = new THREE.Scene();
   if (RENDER_FOG) {
-    //scene.fog = new THREE.FogExp2( FOG_COLOR, 0.08 );
-    scene.fog = new THREE.Fog( FOG_COLOR, 1, 30 );
+    //scene.fog = new THREE.FogExp2( FOG_COLOR, 0.035 );
+    scene.fog = new THREE.Fog( FOG_COLOR, 1, 40 );
     renderer.setClearColor( scene.fog.color, 1 );
   }
   return scene;
 }
 
 function init_camera(scene) {
-  var camera = new THREE.PerspectiveCamera(45, SCREEN_ASPECT_RATIO,
+  var camera = new THREE.PerspectiveCamera(26, SCREEN_ASPECT_RATIO,
                                            0.01, 2000);
-  camera.position.z = 5;
-  camera.position.y = -5;
+  camera.position.z = 10;
+  camera.position.y = -10;
   camera.lookAt(new THREE.Vector3(0,0,0));
   scene.camera = camera;
 }
@@ -135,6 +135,8 @@ var ground = init_ground(scene);
 var x = hex_init();
 var HVERT = x[0];
 var HEXES = x[1];
+var CENTER_HEX_X = 2;
+var CENTER_HEX_Y = 2.4; // visual tweak for ortho perspective
 
 // A = mountain, B = grass, C = sea
 var COLOR_OFFSET = [ MOUNTAIN_OFFSET, GRASS_OFFSET, WATER_OFFSET ];
@@ -200,8 +202,8 @@ function updateHex(scene, h, addEdges) {
     }
     h.objs = [];
 
-    var xoff = (h.x-(HEXES[0].length/2))*1.5;
-    var yoff = (h.y-(HEXES.length/2))*-SQRT3;
+    var xoff = (h.x-CENTER_HEX_X)*1.5;
+    var yoff = (h.y-CENTER_HEX_Y)*-SQRT3;
     if ((h.x%2)==1) { yoff += SQRT3/2; }
 
     var g = null, gg;
@@ -281,7 +283,9 @@ function updateHex(scene, h, addEdges) {
 
 for (var i=0; i<HEXES.length; i++) {
   for (var j=0; j<HEXES[i].length; j++) {
-    updateHex(scene, HEXES[i][j]);
+    if (HEXES[i][j]) {
+      updateHex(scene, HEXES[i][j]);
+    }
   }
 }
 
@@ -293,7 +297,7 @@ function flipHex() {
   var i, j, k, s, q;
   if (flipState == null) {
      flipState = { startTime: Date.now() };
-     if (Math.random() < 0.5) {
+     if (Math.random() < 0.4) {
        // change a vertex color
        var row = Math.floor(Math.random()*(HVERT.length));
        var col = Math.floor(Math.random()*(HVERT[row].length));
@@ -315,6 +319,10 @@ function flipHex() {
        // change a core color
        var row = Math.floor(Math.random()*(HEXES.length));
        var col = Math.floor(Math.random()*(HEXES[row].length));
+       if (!HEXES[row][col]) {
+	 flipState = null;
+	 return; // pick another hex later.
+       }
        flipState.hexes = [ HEXES[row][col] ];
        flipState.doppel = [ flipState.hexes[0].clone() ];
        flipState.doppel[0].color = randomColor();

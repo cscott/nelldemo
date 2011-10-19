@@ -46,9 +46,25 @@ Hex.prototype.neighbors = function() {
   return n;
 }
 
+// a World is a 3-4-5-4-3 arrangement of Hexes
+// (3 rows, 4 rows, 5 rows)
+//
+//           2,0
+//       1,1     3,1
+//   0,1     2,1     4,1
+//       1,2     3,2
+//   0,2     2,2     4,2
+//       1,3     3,3
+//   0,3     2,3     4,3
+//       1,4     3,4
+//           2,4
+
+function World() {
+}
+
 function hex_init() {
-  var NROWS = 6;
-  var NCOLS = 10;
+  var NROWS = 5;
+  var NCOLS = 5;
   var i,j;
   var v = [];
   for (i=0; i<NROWS+1; i++) {
@@ -65,8 +81,12 @@ function hex_init() {
   for (i=0; i<NROWS; i++) {
     h[i] = [];
     for (j=0; j<NCOLS; j++) {
+      // hackity hack to ensure proper "hex of hexes" shape
+      if (i==0 && j!=2) continue;
+      if (i==4 && (j==0 || j==4)) continue;
+      // ok, this is a good hex, let's set it up.
       var hh = new Hex(j, i, j%3);
-      h[i].push(hh);
+      h[i][j]=hh;
       // now link up vertices
       var evenRow = (i%2) == 0;
       var evenCol = (j%2) == 0;
