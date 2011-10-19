@@ -9,35 +9,86 @@ var REALTIME_SPEEDUP = 24*60; // 1 day = 1 minute, for day/night cycle
 //if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 var SCREEN_ASPECT_RATIO = 4/3;
 var container = document.body;
-var renderer = new THREE.WebGLRenderer();
-renderer.autoClear = false; // for shadowmap (two passes)
-
-var camera = new THREE.PerspectiveCamera(45, SCREEN_ASPECT_RATIO,
-                                         0.01, 2000);
-camera.position.z = 5;
-camera.position.y = -5;
-camera.lookAt(new THREE.Vector3(0,0,0));
 
 var daytime = .23; // [0-1) where 0=midnight, 0.5=noon
 var mouse = { x:0, y:0 };
 var projector = new THREE.Projector();
 
-var scene = new THREE.Scene();
-if (RENDER_FOG) {
-  //scene.fog = new THREE.FogExp2( FOG_COLOR, 0.08 );
-  scene.fog = new THREE.Fog( FOG_COLOR, 1, 30 );
-  renderer.setClearColor( scene.fog.color, 1 );
+function init_renderer(container) {
+  var renderer = new THREE.WebGLRenderer();
+  renderer.autoClear = false; // for shadowmap (two passes)
+  renderer.domElement.style.position = "relative";
+  container.appendChild(renderer.domElement);
+  return renderer;
 }
 
-var ambientLight = new THREE.AmbientLight( 0x404040 );
-scene.add( ambientLight );
+function init_scene(renderer) {
+  var scene = new THREE.Scene();
+  if (RENDER_FOG) {
+    //scene.fog = new THREE.FogExp2( FOG_COLOR, 0.08 );
+    scene.fog = new THREE.Fog( FOG_COLOR, 1, 30 );
+    renderer.setClearColor( scene.fog.color, 1 );
+  }
+  return scene;
+}
 
-var spotLight = new THREE.SpotLight(0xFFFFFF);
-spotLight.position.set( 15, 15, 4 );
-spotLight.position.normalize().multiplyScalar(22);
-spotLight.target.position.set( 0, 0, 0 );
-spotLight.castShadow = true;
-scene.add(spotLight);
+function init_camera(scene) {
+  var camera = new THREE.PerspectiveCamera(45, SCREEN_ASPECT_RATIO,
+                                           0.01, 2000);
+  camera.position.z = 5;
+  camera.position.y = -5;
+  camera.lookAt(new THREE.Vector3(0,0,0));
+  scene.camera = camera;
+}
+
+function init_lights(scene) {
+  var ambientLight = new THREE.AmbientLight( 0x404040 );
+  scene.add( ambientLight );
+
+  var spotLight = new THREE.SpotLight(0xFFFFFF);
+  spotLight.position.set( 15, 15, 4 );
+  spotLight.position.normalize().multiplyScalar(22);
+  spotLight.target.position.set( 0, 0, 0 );
+  spotLight.castShadow = true;
+  scene.add( spotLight );
+
+  // This is JavaScript: add these as properties of the scene
+  scene.ambientLight = ambientLight;
+  scene.spotLight = spotLight;
+}
+
+function init_stats(container) {
+  var stats = new Stats();
+  stats.domElement.style.position = 'absolute';
+  stats.domElement.style.top = '0px';
+  stats.domElement.style.right = '0px';
+  stats.domElement.style.zIndex = 100;
+  container.appendChild( stats.domElement );
+  return stats;
+}
+
+function init_controls(scene) {
+  var controls = new THREE.TrackballControls( scene.camera );
+  controls.rotateSpeed = 3.0;
+  controls.zoomSpeed = 5;
+  controls.panSpeed = 0.8;
+
+  controls.noZoom = false;
+  controls.noPan = false;
+
+  controls.staticMoving = true;
+  controls.dynamicDampingFactor = 0.3;
+
+  controls.keys = [ 65, 83, 68 ];
+  return controls;
+}
+
+var renderer = init_renderer(container);
+var scene = init_scene(renderer);
+init_camera(scene);
+init_lights(scene);
+var stats = init_stats(container);
+var controls = init_controls(scene);
 
 var tileMaterials = [];
 // in order: mountain, grass, sea
@@ -71,6 +122,14 @@ var appTexture = THREE.ImageUtils.loadTexture("textures/tomas_arad_home.png");
 
 var BASE_HEIGHT = .15;
 var WATER_OFFSET = -.1, GRASS_OFFSET = 0, MOUNTAIN_OFFSET = .25;
+
+function init_ground(scene) {
+  var ground = new THREE.Mesh(new THREE.PlaneGeometry(100,100), waterMaterial);
+  ground.position.z = BASE_HEIGHT + WATER_OFFSET;
+  scene.add(ground);
+  return ground;
+}
+var ground = init_ground(scene);
 
 // initialize the hexes and start drawin' 'em!
 var x = hex_init();
@@ -341,17 +400,11 @@ function flipHex() {
     flipState = null;
   }
 }
-var ground = new THREE.Mesh(new THREE.PlaneGeometry(100,100), waterMaterial);
-ground.position.z = BASE_HEIGHT + WATER_OFFSET;
-scene.add(ground);
 
-renderer.domElement.style.position = "relative";
-container.appendChild(renderer.domElement);
-
-if (RENDER_SHADOWS) {
+function init_shadows(renderer) {
   // adjust shadowCameraNear to make depth scaling work right for shadowMap
   renderer.shadowCameraNear = 0.001;
-  renderer.shadowCameraFar = camera.far;
+  renderer.shadowCameraFar = scene.camera.far;
   // "uncomment to see light frustum boundaries" in WebGLShaders.js
   // in order to adjust this
   renderer.shadowCameraFov = 50;
@@ -364,64 +417,54 @@ if (RENDER_SHADOWS) {
 
   renderer.shadowMapEnabled = true;
   renderer.shadowMapSoft = true;
+}
+function init_shadow_hud(renderer, scene) {
+  // add a test item to the scene
+  var planeMaterial = new THREE.MeshLambertMaterial( { color: 0xffdd99 } );
+  var mtest = new THREE.Mesh(new THREE.CubeGeometry(1,1,1), planeMaterial);
+  mtest.position.z = 1;
+  mtest.castShadow = true;
+  scene.add(mtest);
 
-  if (DEBUG_SHADOW_MAP) {
-    // add a test item to the scene
-    var planeMaterial = new THREE.MeshLambertMaterial( { color: 0xffdd99 } );
-    var mtest = new THREE.Mesh(new THREE.CubeGeometry(1,1,1), planeMaterial);
-    mtest.position.z = 1;
-    mtest.castShadow = true;
-    scene.add(mtest);
+  // show shadow map
+  // (borrowed from webgl_shadowmap.html demo; don't expect me to understand
+  //  how this works!)
+  // XXX: this should resize onWindowResize, but I'm lazy.
+  var SCREEN_WIDTH = window.innerWidth, SCREEN_HEIGHT = window.innerHeight;
+  var cameraOrtho = new THREE.OrthographicCamera(
+    SCREEN_WIDTH / - 2, SCREEN_WIDTH / 2,
+    SCREEN_HEIGHT / 2, SCREEN_HEIGHT / - 2, -10, 1000 );
+  cameraOrtho.position.z = 10;
 
-    // show shadow map
-    // (borrowed from webgl_shadowmap.html demo; don't expect me to understand
-    //  how this works!)
-    // XXX: this should resize onWindowResize, but I'm lazy.
-    var SCREEN_WIDTH = window.innerWidth, SCREEN_HEIGHT = window.innerHeight;
-    cameraOrtho = new THREE.OrthographicCamera(
-      SCREEN_WIDTH / - 2, SCREEN_WIDTH / 2,
-      SCREEN_HEIGHT / 2, SCREEN_HEIGHT / - 2, -10, 1000 );
-    cameraOrtho.position.z = 10;
+  var shader = THREE.ShaderExtras[ "screen" ];
+  var uniforms = new THREE.UniformsUtils.clone( shader.uniforms );
 
-    var shader = THREE.ShaderExtras[ "screen" ];
-    var uniforms = new THREE.UniformsUtils.clone( shader.uniforms );
+  var hudMaterial = new THREE.ShaderMaterial( {
+    vertexShader: shader.vertexShader, fragmentShader: shader.fragmentShader,
+    uniforms: uniforms } );
 
-    hudMaterial = new THREE.ShaderMaterial( {
-      vertexShader: shader.vertexShader, fragmentShader: shader.fragmentShader,
-      uniforms: uniforms } );
+  var hudGeo = new THREE.PlaneGeometry(
+    SHADOW_MAP_SIZE / 2, SHADOW_MAP_SIZE / 2 );
+  var hudMesh = new THREE.Mesh( hudGeo, hudMaterial );
+  hudMesh.position.x = ( SCREEN_WIDTH - SHADOW_MAP_SIZE / 2 ) * -0.5;
+  hudMesh.position.y = ( SCREEN_HEIGHT - SHADOW_MAP_SIZE / 2 ) * -0.5;
 
-    var hudGeo = new THREE.PlaneGeometry(
-      SHADOW_MAP_SIZE / 2, SHADOW_MAP_SIZE / 2 );
-    var hudMesh = new THREE.Mesh( hudGeo, hudMaterial );
-    hudMesh.position.x = ( SCREEN_WIDTH - SHADOW_MAP_SIZE / 2 ) * -0.5;
-    hudMesh.position.y = ( SCREEN_HEIGHT - SHADOW_MAP_SIZE / 2 ) * -0.5;
+  var sceneHUD = new THREE.Scene();
+  sceneHUD.add( hudMesh );
 
-    sceneHUD = new THREE.Scene();
-    sceneHUD.add( hudMesh );
-
-    cameraOrtho.lookAt( sceneHUD.position );
-  }
+  cameraOrtho.lookAt( sceneHUD.position );
+  return { hudMaterial: hudMaterial,
+	   sceneHUD: sceneHUD,
+	   cameraOrtho: cameraOrtho };
 }
 
-stats = new Stats();
-stats.domElement.style.position = 'absolute';
-stats.domElement.style.top = '0px';
-stats.domElement.style.right = '0px';
-stats.domElement.style.zIndex = 100;
-container.appendChild( stats.domElement );
-
-var controls = new THREE.TrackballControls( camera );
-controls.rotateSpeed = 3.0;
-controls.zoomSpeed = 5;
-controls.panSpeed = 0.8;
-
-controls.noZoom = false;
-controls.noPan = false;
-
-controls.staticMoving = true;
-controls.dynamicDampingFactor = 0.3;
-
-controls.keys = [ 65, 83, 68 ];
+var shadow;
+if (RENDER_SHADOWS) {
+  init_shadows(renderer);
+  if (DEBUG_SHADOW_MAP) {
+    shadow = init_shadow_hud(renderer, scene);
+  }
+}
 
 function onDocumentMouseMove( event ) {
   event.preventDefault();
@@ -443,9 +486,11 @@ function onWindowResize( event ) {
   renderer.domElement.style.left=Math.floor((window.innerWidth-w)/2)+"px";
   renderer.domElement.style.top=Math.floor((window.innerHeight-h)/2)+"px";
 
-  camera.aspect = w/h;
-  camera.updateProjectionMatrix();
-  console.log(w, h, window.innerWidth, window.innerHeight);
+  /* not needed, since we're using a fixed aspect ratio now */
+  if (false) {
+    scene.camera.aspect = w/h;
+    scene.camera.updateProjectionMatrix();
+  }
 }
 
 
@@ -453,8 +498,8 @@ function animate() {
   requestAnimationFrame( animate );
 
   var vector = new THREE.Vector3( mouse.x, mouse.y, 0.5 );
-  projector.unprojectVector( vector, camera );
-  var ray = new THREE.Ray( camera.position, vector.subSelf( camera.position ).normalize() );
+  projector.unprojectVector( vector, scene.camera );
+  var ray = new THREE.Ray( scene.camera.position, vector.subSelf( scene.camera.position ).normalize() );
 
   render();
   stats.update();
@@ -466,20 +511,7 @@ function map_linear( x, sa, sb, ea, eb ) {
   return ( x  - sa ) * ( eb - ea ) / ( sb - sa ) + ea;
 };
 
-var lastFrameTime = Date.now();
-var FIXED_TIME=null;
-function render() {
-  var elapsed = Date.now() - lastFrameTime;
-  lastFrameTime += elapsed;
-
-  // move camera
-  if (controls) controls.update();
-  // animate terrain mutation
-  flipHex();
-  // day/night cycle
-  daytime += elapsed*REALTIME_SPEEDUP/(1000*60*60*24);
-  if (daytime >= 1) { daytime -= Math.floor(daytime); }
-
+function update_time_of_day(renderer, scene, daytime) {
   var v = clamp(0.5-Math.cos(daytime*2*Math.PI)*1.8, 0.1, 0.95);
   var v2 = 0.5 * (1-clamp(-Math.cos(daytime*2*Math.PI), 0, 1));
   var skyColor = new THREE.Color().setHSV( 0.51, v2, v );
@@ -515,37 +547,53 @@ function render() {
                             cues[i-1][0], cues[i][0],
                             cues[i-1][1], cues[i][1]);
   sunAngle = -sunAngle*Math.PI/180;
-  spotLight.intensity = map_linear(daytime,
-                                   cues[i-1][0], cues[i][0],
-                                   cues[i-1][2], cues[i][2]);
-  spotLight.color.setRGB(map_linear(daytime,
-                                    cues[i-1][0], cues[i][0],
-                                    cues[i-1][3], cues[i][3]),
-                         map_linear(daytime,
-                                    cues[i-1][0], cues[i][0],
-                                    cues[i-1][4], cues[i][4]),
-                         map_linear(daytime,
-                                    cues[i-1][0], cues[i][0],
-                                    cues[i-1][5], cues[i][5]));
+  scene.spotLight.intensity = map_linear(daytime,
+					 cues[i-1][0], cues[i][0],
+					 cues[i-1][2], cues[i][2]);
+  scene.spotLight.color.setRGB(map_linear(daytime,
+					  cues[i-1][0], cues[i][0],
+					  cues[i-1][3], cues[i][3]),
+                               map_linear(daytime,
+					  cues[i-1][0], cues[i][0],
+					  cues[i-1][4], cues[i][4]),
+                               map_linear(daytime,
+					  cues[i-1][0], cues[i][0],
+					  cues[i-1][5], cues[i][5]));
   var m = new THREE.Matrix4().setRotationAxis(new THREE.Vector3(-1,1,0), sunAngle);
-  spotLight.position.set( 15, 15, 0 );
-  m.multiplyVector3(spotLight.position);
+  scene.spotLight.position.set( 15, 15, 0 );
+  m.multiplyVector3(scene.spotLight.position);
 
-  ambientLight.color.setHSV( 0, 0, map_linear(daytime,
-                                    cues[i-1][0], cues[i][0],
-                                    cues[i-1][6], cues[i][6]));
+  scene.ambientLight.color.setHSV( 0, 0, map_linear(daytime,
+						    cues[i-1][0], cues[i][0],
+						    cues[i-1][6], cues[i][6]));
 
   var dark = map_linear(daytime, cues[i-1][0], cues[i][0],
                                  cues[i-1][7], cues[i][7]);
   renderer.shadowMapDarkness = dark;
+}
+
+var lastFrameTime = Date.now();
+var FIXED_TIME=null;
+function render() {
+  var elapsed = Date.now() - lastFrameTime;
+  lastFrameTime += elapsed;
+
+  // move camera
+  if (controls) controls.update();
+  // animate terrain mutation
+  flipHex();
+  // day/night cycle
+  daytime += elapsed*REALTIME_SPEEDUP/(1000*60*60*24);
+  if (daytime >= 1) { daytime -= Math.floor(daytime); }
+  update_time_of_day(renderer, scene, daytime);
 
   renderer.clear();
-  renderer.render( scene, camera );
+  renderer.render( scene, scene.camera );
 
   if (RENDER_SHADOWS && DEBUG_SHADOW_MAP) {
     // debug shadow map
-    hudMaterial.uniforms.tDiffuse.texture = renderer.shadowMap[ 0 ];
-    renderer.render( sceneHUD, cameraOrtho);
+    shadow.hudMaterial.uniforms.tDiffuse.texture = renderer.shadowMap[ 0 ];
+    renderer.render( shadow.sceneHUD, shadow.cameraOrtho);
   }
 
 }
