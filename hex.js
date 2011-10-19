@@ -60,11 +60,9 @@ Hex.prototype.neighbors = function() {
 //           2,4
 
 function World() {
-}
-
-function hex_init() {
-  var NROWS = 5;
-  var NCOLS = 5;
+  this.SIZE = 5; // in future, might do larger hexes as well?
+  var NROWS = this.SIZE;
+  var NCOLS = this.SIZE;
   var i,j;
   var v = [];
   for (i=0; i<NROWS+1; i++) {
@@ -106,5 +104,51 @@ function hex_init() {
       }
     }
   }
-  return [v,h]
+  // prune unnecessary vertices
+  for (i=0; i<v.length; i++) {
+    for (j=0; j<v[i].length; j++) {
+      if (v[i][j].hexes.length == 0) {
+	delete v[i][j];
+      }
+    }
+  }
+  this.hexes = h;
+  this.vertices = v;
 }
+World.prototype = {}
+World.prototype.constructor = World;
+World.prototype.randomHex = function() {
+  var all_hexes = [ [0,1], [0,2], [0,3],
+		    [1,1], [1,2], [1,3], [1,4],
+		    [2,0], [2,1], [2,2], [2,3], [2,4],
+		    [3,1], [3,2], [3,3], [3,4],
+		    [4,1], [4,2], [4,3] ];
+  return function() {
+    var which = Math.floor(Math.random() * all_hexes.length);
+    var coord = all_hexes[which];
+    return this.hexes[coord[1]/*row*/][coord[0]/*col*/];
+  };
+}();
+World.prototype.randomInteriorVertex = function() {
+  var h = this.randomHex();
+  var vv = []; // this would be a list comprehension in mozilla js, sigh
+  for (var k=0; k<h.vertices.length; k++) {
+    if (!this.isBorderVertex(h.vertices[k])) {
+      vv.push(h.vertices[k]);
+    }
+  }
+  var which = Math.floor(Math.random() * vv.length);
+  return vv[which];
+};
+World.prototype.isBorderHex = function(hex) {
+  var n = hex.neighbors();
+  for (var k=0; k<6; k++) {
+    if (!(this.hexes[n[k][1]] && this.hexes[n[k][1]][n[k][0]])) {
+      return true;
+    }
+  }
+  return false;
+};
+World.prototype.isBorderVertex = function(vertex) {
+  return vertex.hexes.length < 3;
+};

@@ -132,9 +132,7 @@ function init_ground(scene) {
 var ground = init_ground(scene);
 
 // initialize the hexes and start drawin' 'em!
-var x = hex_init();
-var HVERT = x[0];
-var HEXES = x[1];
+var world = new World();
 var CENTER_HEX_X = 2;
 var CENTER_HEX_Y = 2.4; // visual tweak for ortho perspective
 
@@ -149,6 +147,19 @@ var COLOR_OFFSET = [ MOUNTAIN_OFFSET, GRASS_OFFSET, WATER_OFFSET ];
 var COLOR_TABLE = [ /* mountain */ [  [5,false], [0,false], [4,true ] ],
                     /* grass */    [  [0,true ], [1,false], [2,false] ],
                     /* sea */      [  [4,false], [2,true ], [3,false] ] ];
+
+// make borders of world all ocean
+(function () {
+  for (var i=0; i<world.vertices.length; i++) {
+    for (var j=0; j<world.vertices[i].length; j++) {
+      var v = world.vertices[i][j];
+      if (!v) continue;
+      if (world.isBorderVertex(v)) {
+	v.color = 2; /* sea */
+      }
+    }
+  }
+})();
 
 function UVavg(uv1, uv2) {
   return new THREE.UV((uv1.u + uv2.u) / 2,
@@ -249,9 +260,7 @@ function updateHex(scene, h, addEdges) {
     scene.add(s);
 
     // always add edges if this is a boundary hex.
-    n = h.neighbors();
-    for (k=0; k<6; k++) {
-      if (HEXES[n[k][1]] && HEXES[n[k][1]][n[k][0]]) continue;
+    if (world.isBorderHex(h)) {
       addEdges = true;
     }
 
@@ -281,10 +290,10 @@ function updateHex(scene, h, addEdges) {
     scene.add(s);
 }
 
-for (var i=0; i<HEXES.length; i++) {
-  for (var j=0; j<HEXES[i].length; j++) {
-    if (HEXES[i][j]) {
-      updateHex(scene, HEXES[i][j]);
+for (var i=0; i<world.hexes.length; i++) {
+  for (var j=0; j<world.hexes[i].length; j++) {
+    if (world.hexes[i][j]) {
+      updateHex(scene, world.hexes[i][j]);
     }
   }
 }
@@ -297,11 +306,9 @@ function flipHex() {
   var i, j, k, s, q;
   if (flipState == null) {
      flipState = { startTime: Date.now() };
-     if (Math.random() < 0.4) {
+     if (Math.random() < 0.5) {
        // change a vertex color
-       var row = Math.floor(Math.random()*(HVERT.length));
-       var col = Math.floor(Math.random()*(HVERT[row].length));
-       var v = HVERT[row][col];
+       var v = world.randomInteriorVertex();
        var nv = v.clone();
        nv.color = randomColor();
        flipState.hexes = v.hexes;
@@ -317,13 +324,7 @@ function flipHex() {
        }
      } else {
        // change a core color
-       var row = Math.floor(Math.random()*(HEXES.length));
-       var col = Math.floor(Math.random()*(HEXES[row].length));
-       if (!HEXES[row][col]) {
-	 flipState = null;
-	 return; // pick another hex later.
-       }
-       flipState.hexes = [ HEXES[row][col] ];
+       flipState.hexes = [ world.randomHex() ];
        flipState.doppel = [ flipState.hexes[0].clone() ];
        flipState.doppel[0].color = randomColor();
        // pick axis at random, but quantize
@@ -348,8 +349,8 @@ function flipHex() {
        // find all neighbors
        var n = flipState.hexes[i].neighbors();
        for (j=0; j<n.length; j++) {
-         if (!HEXES[n[j][1]]) { continue; }
-         var nn = HEXES[n[j][1]][n[j][0]];
+         if (!world.hexes[n[j][1]]) { continue; }
+         var nn = world.hexes[n[j][1]][n[j][0]];
          if (!nn) { continue; }
          flipState.neighbors.push(nn);
        }
