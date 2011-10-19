@@ -6,7 +6,7 @@ var SCREEN_ASPECT_RATIO = 4/3;
 var container = document.body;
 
 var daytime = .23; // [0-1) where 0=midnight, 0.5=noon
-var mouse = { x:0, y:0 };
+var mouse = new THREE.Vector3(0, 0, 0.5);
 var projector = new THREE.Projector();
 
 function init_renderer(container) {
@@ -297,9 +297,10 @@ if (RENDER_SHADOWS) {
 }
 
 function onDocumentMouseMove( event ) {
+  var c = renderer.domElement;
   event.preventDefault();
-  mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-  mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+  mouse.x = ( event.offsetX / c.width ) * 2 - 1;
+  mouse.y = - ( event.offsetY / c.height ) * 2 + 1;
 };
 
 function onWindowResize( event ) {
@@ -323,6 +324,11 @@ function onWindowResize( event ) {
   }
 }
 
+var haloTexture = THREE.ImageUtils.loadTexture('textures/halo-128.png');
+var haloMaterial = new THREE.MeshBasicMaterial({map:haloTexture, transparent:true});
+var halo = new THREE.Mesh(new THREE.PlaneGeometry(1,1), haloMaterial);
+halo.position.set(0,0,1);
+scene.add(halo);
 
 function animate() {
   requestAnimationFrame( animate );
@@ -330,6 +336,14 @@ function animate() {
   var vector = new THREE.Vector3( mouse.x, mouse.y, 0.5 );
   projector.unprojectVector( vector, scene.camera );
   var ray = new THREE.Ray( scene.camera.position, vector.subSelf( scene.camera.position ).normalize() );
+
+  // compute ray's intersection with the Z=0 plane
+  var DESIRED_Z = WorldConst.BASE_HEIGHT+WorldConst.MOUNTAIN_OFFSET-.1;
+  var amt = (DESIRED_Z-ray.origin.z) / ray.direction.z;
+  var vv = ray.direction.clone().multiplyScalar(amt).addSelf(ray.origin);
+  halo.position.x = vv.x;
+  halo.position.y = vv.y;
+  halo.position.z = vv.z;
 
   render();
   stats.update();
