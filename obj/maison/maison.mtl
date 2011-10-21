@@ -1,0 +1,278 @@
+# Blender MTL File: 'maison.blend'
+# Material Count: 26
+newmtl buchebois_WoodEnds0023_3_M.jpg
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.404849 0.404849 0.404849
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 1
+map_Kd /home/cananian/Projects/OLPC/Narrative/tiles/stuff/textures/WoodEnds0023_3_M.jpg
+map_Bump /home/cananian/Projects/OLPC/Narrative/tiles/stuff/textures/WoodEnds0023_3_M.jpg
+
+
+newmtl buchebois_ecorce_WoodEnds0023_3_M..000
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.281212 0.281212 0.281212
+Ks 0.039394 0.039394 0.039394
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd /home/cananian/Projects/OLPC/Narrative/tiles/stuff/textures/BarkDecidious0194_1_S.jpg
+
+
+newmtl linge1
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 1
+
+
+newmtl linge2
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.800000 0.550681 0.550681
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 1
+
+
+newmtl maison
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.600664 0.600664 0.600664
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 1
+
+
+newmtl maison_BrickGroutless0048_12
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.600664 0.600664 0.600664
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 1
+map_Kd /home/cananian/Projects/OLPC/Narrative/tiles/stuff/textures/BrickGroutless0048_12_L.jpg
+
+
+newmtl maison_fenetre
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.414164 0.295366 0.233485
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 1
+
+
+newmtl maison_fenetre_Untitled
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.414164 0.295366 0.233485
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 1
+map_Kd Untitled
+
+
+newmtl maison_fenetre_pierre_mur01.png
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.417736 0.414629 0.349574
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 1
+map_Kd /home/cananian/Projects/OLPC/Narrative/tiles/stuff/textures/mur01.jpg
+map_Bump /home/cananian/Projects/OLPC/Narrative/tiles/stuff/textures/RockSmooth0042_L.jpg
+
+
+newmtl maison_pierres_mur01.png
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 1.000000 0.913162 0.739485
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 1
+map_Kd /home/cananian/Projects/OLPC/Narrative/tiles/stuff/textures/mur01.jpg
+
+
+newmtl pincebois
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.800000 0.600303 0.446597
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 1
+
+
+newmtl pincemetal
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.640000 0.640000 0.640000
+Ks 1.234110 1.234110 1.234110
+Ni 1.000000
+d 1.000000
+illum 2
+
+
+newmtl porche_tuiles
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.216398 0.134616 0.127169
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 1
+
+
+newmtl sol
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.099054 0.165077 0.086721
+Ks 0.500000 0.500000 0.500000
+Ni 1.000000
+d 1.000000
+illum 2
+
+
+newmtl tour_bric_orange
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.126778 0.087226 0.052202
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 1
+
+
+newmtl tour_pierre_mur01.png
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.606184 0.342644 0.171056
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 1
+map_Kd /home/cananian/Projects/OLPC/Narrative/tiles/stuff/textures/mur01.jpg
+
+
+newmtl tour_toit_bois
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.051712 0.039824 0.037063
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 1
+map_Kd /home/cananian/Projects/OLPC/Narrative/tiles/stuff/textures/BarkStripped0021_M.jpg
+
+
+newmtl tour_toit_bois_BarkStripped0021_M.jp
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.051712 0.039824 0.037063
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 1
+map_Kd /home/cananian/Projects/OLPC/Narrative/tiles/stuff/textures/BarkStripped0021_M.jpg
+
+
+newmtl tour_toit_gris
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.239166 0.239166 0.239166
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 1
+
+
+newmtl tour_toit_tuile
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.100377 0.094699 0.098957
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 1
+
+
+newmtl tuiles
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 1.000000 0.702269 0.543888
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 1
+map_Kd /home/cananian/Projects/OLPC/Narrative/tiles/stuff/textures/RustScratches0050_L.jpg
+
+
+newmtl tuiles.001
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.914316 0.480673 0.047669
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 1
+map_Kd /home/cananian/Projects/OLPC/Narrative/tiles/stuff/textures/RustScratches0050_L.jpg
+
+
+newmtl tuiles.001_RustScratches0050_L.j
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.914316 0.480673 0.047669
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 1
+map_Kd /home/cananian/Projects/OLPC/Narrative/tiles/stuff/textures/RustScratches0050_L.jpg
+
+
+newmtl tuiles_RooftilesSlate008
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 1.000000 0.702269 0.543888
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 1
+map_Kd /home/cananian/Projects/OLPC/Narrative/tiles/stuff/textures/RooftilesSlate0081_9_L.jpg
+
+
+newmtl tuiles_RustScratches0050_L.j
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 1.000000 0.702269 0.543888
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+d 1.000000
+illum 1
+map_Kd /home/cananian/Projects/OLPC/Narrative/tiles/stuff/textures/RustScratches0050_L.jpg
+
+
+newmtl vitre
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.640000 0.640000 0.640000
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+d 0.556017
+illum 1
+
+
