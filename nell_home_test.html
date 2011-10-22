@@ -1,18 +1,19 @@
 <!doctype html>
 <html lang="en">
 	<head>
-		<title>three.js webgl - io - OBJ converter</title>
+		<title>Nell Flyby Demo</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		<style>
 			body {
-				background:#fff;
+				background:black/*letter boxing*/;
 				padding:0;
 				margin:0;
 				overflow:hidden;
 				font-family:georgia;
 				text-align:center;
 			}
+                        canvas { display: block; padding: 0; margin: 0; }
 			h1 { }
 			a { color:skyblue }
 
@@ -23,10 +24,6 @@
 	</head>
 
 	<body>
-		<div id="d">
-			<h1>OBJ to Three.js converter test</h1>
-		</div>
-
 		<script src="Three.js"></script>
 
 		<script src="js/Detector.js"></script>
@@ -34,9 +31,7 @@
 		<script src="js/Stats.js"></script>
 
 		<script>
-
-			var SCREEN_WIDTH = window.innerWidth;
-			var SCREEN_HEIGHT = window.innerHeight;
+                        var SCREEN_ASPECT_RATIO = 4/3;
 			var FLOOR = -250;
 
 			var container,stats;
@@ -44,11 +39,13 @@
 			var camera, scene;
 			var webglRenderer;
 
-			var mesh, zmesh, geometry;
+                        var mesh, geometry;
+                        var towerMesh, nellMesh;
 
 			var mouseX = 0, mouseY = 0;
 		        var ambientLight;
                         var directionalLight, lightSphere;
+                        var cameraAnimation;
 
 			var windowHalfX = window.innerWidth / 2;
 			var windowHalfY = window.innerHeight / 2;
@@ -57,6 +54,7 @@
 
 		var controls;
 function init_controls(camera) {
+		/*
 		var controls = new THREE.TrackballControls( camera );
   controls.rotateSpeed = 3.0;
   controls.zoomSpeed = 5;
@@ -69,33 +67,49 @@ function init_controls(camera) {
   controls.dynamicDampingFactor = 0.3;
 
   controls.keys = [ 65, 83, 68 ];
+		*/
+		var controls = new THREE.FlyControls( camera );
+		controls.movementSpeed = 50;
+		controls.rollSpeed = 0.4;
+		controls.dragToLook = true;
 		return controls;
 		}
 
 		
-			document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+			document.addEventListener( 'keydown', onDocumentKeyDown, false );
 
 		        init();
-			animate();
 
 			function init() {
 
-				container = document.createElement( 'div' );
-				document.body.appendChild( container );
+				container = document.body;
 
-				camera = new THREE.PerspectiveCamera( 75, SCREEN_WIDTH / SCREEN_HEIGHT, 1, 100000 );
+				camera = new THREE.PerspectiveCamera( 75, SCREEN_ASPECT_RATIO, 1, 100000 );
 				camera.position.z = 500;
 
 				scene = new THREE.Scene();
 		controls = init_controls(camera);
+
+                                // monitor load progress
+                                function reallyDone() {
+                                  cameraAnimation.play(false,0);
+                                }
+                                var completionCallback = function(ttl) {
+                                  var cnt = ttl;
+                                  return function() {
+                                    cnt -= 1;
+                                    if (cnt==0) { reallyDone(); }
+                                  }
+                                }(5);
 
 				// GROUND
 
 				var x = document.createElement( "canvas" );
 				var xc = x.getContext("2d");
 				x.width = x.height = 128;
-				xc.fillStyle = "#fff";
+				xc.fillStyle = "#9aabd5";
 				xc.fillRect(0, 0, 128, 128);
+/*
 				xc.fillStyle = "#000";
 				xc.fillRect(0, 0, 64, 64);
 				xc.fillStyle = "#999";
@@ -104,17 +118,22 @@ function init_controls(camera) {
 				xc.fillRect(64, 64, 64, 64);
 				xc.fillStyle = "#555";
 				xc.fillRect(96, 96, 32, 32);
+*/
 
 				var xm = new THREE.MeshBasicMaterial( { map: new THREE.Texture( x, new THREE.UVMapping(), THREE.RepeatWrapping, THREE.RepeatWrapping ) } );
 				xm.map.needsUpdate = true;
-				xm.map.repeat.set( 10, 10 );
+				xm.map.repeat.set( 5, 5 );
+
+var xx = document.createElement("image");
+xx.onload = function() { xm.map.image = xx; xm.map.needsUpdate = true; completionCallback(); }
+xx.src = "textures/island-texture-128.png";
 
 				geometry = new THREE.PlaneGeometry( 100, 100, 15, 10 );
 
 				mesh = new THREE.Mesh( geometry, xm );
 				mesh.position.set( 0, FLOOR, 0 );
 				mesh.rotation.x = Math.PI/2;
-				mesh.scale.set( 10, 10, 10 );
+				mesh.scale.set( 50, 50, 50 );
 				mesh.doubleSided = true;
 				scene.add( mesh );
 
@@ -152,23 +171,23 @@ function init_controls(camera) {
                                 lightSphere = new THREE.Mesh(
                                   new THREE.SphereGeometry(10, 8, 8),
 				  new THREE.MeshLambertMaterial(
-                                    {color:0xFF0000}));
+                                    {color:0xFFFF00}));
                                 scene.add(lightSphere);
 
                                 var lightSphere2 = new THREE.Mesh(
                                   new THREE.SphereGeometry(10, 8, 8),
 				  new THREE.MeshLambertMaterial(
                                     {color:0xFF0000}));
-                                scene.add(lightSphere2);
+                                //scene.add(lightSphere2);
 
 				var shader = THREE.ShaderUtils.lib[ "normal" ];
 				var uniforms = THREE.UniformsUtils.clone( shader.uniforms );
 
-var normalTexture = THREE.ImageUtils.loadTexture("obj/watchtower/Wachturm_tex_x_NRM_fixed.jpg" );
+var normalTexture = THREE.ImageUtils.loadTexture("obj/watchtower/Wachturm_tex_x_NRM_fixed.jpg", undefined, completionCallback );
 				uniforms[ "tNormal" ].texture = normalTexture;
 				uniforms[ "uNormalScale" ].value = 2;
 
-                                var diffuseTexture = THREE.ImageUtils.loadTexture("obj/watchtower/Wachturm_tex_x.jpg" );
+                                var diffuseTexture = THREE.ImageUtils.loadTexture("obj/watchtower/Wachturm_tex_x.jpg", undefined, completionCallback );
 				uniforms[ "tDiffuse" ].texture = diffuseTexture;
 
 				uniforms[ "enableAO" ].value = false;
@@ -179,18 +198,24 @@ var normalTexture = THREE.ImageUtils.loadTexture("obj/watchtower/Wachturm_tex_x_
 				uniforms[ "uAmbientColor" ].value.setHex( 0xFFFFFF );
 
 
-				var parameters = { fragmentShader: shader.fragmentShader, vertexShader: shader.vertexShader, uniforms: uniforms, lights: true };
+                                // FOG
+                                scene.fog = new THREE.Fog(0xBFD1E5, 1, 1100);
+
+				var parameters = {
+                                  fragmentShader: shader.fragmentShader,
+                                  vertexShader: shader.vertexShader,
+                                  uniforms: uniforms,
+                                  lights: true, fog: true };
 				var towerMaterial = new THREE.ShaderMaterial( parameters );
 
-// RENDERER
 
+// RENDERER
 
 					try {
 
 						webglRenderer = new THREE.WebGLRenderer();
-						webglRenderer.setSize( SCREEN_WIDTH, SCREEN_HEIGHT );
 						webglRenderer.domElement.style.position = "relative";
-
+                                                webglRenderer.setClearColor(scene.fog.color, 1);
 						container.appendChild( webglRenderer.domElement );
 
 
@@ -207,16 +232,29 @@ var normalTexture = THREE.ImageUtils.loadTexture("obj/watchtower/Wachturm_tex_x_
 				container.appendChild( stats.domElement );
 
 				//
-
-				//var loader = new THREE.BinaryLoader(),
+                                function checkMaterials(materials) {
+                                  for (var i=0; i<materials.length; i++) {
+                                    for (var j=0; j<materials[i].length; j++) {
+                                      var m = materials[i][j];
+                                      if (m.map && !m.map.image.complete) {
+                                        console.log("Waiting for ", m.map);
+                                        setTimeout(function() { checkMaterials(materials); }, 1000);
+                                        return;
+                                      }
+                                    }
+                                  }
+                                  completionCallback();
+                                }
 				var loader = new THREE.JSONLoader();
 			        towerCallback = function( geometry ) {
 				  createTower( geometry, 40, FLOOR, -20, towerMaterial );
+                                  checkMaterials([[towerMaterial]]);
                                 };
 				loader.load( { model: "obj/watchtower/watchtower.js",
                                                callback: towerCallback } );
                                 nellCallback = function (geometry) {
-                                  createNell( geometry, 0, 4.5, 25);
+                                  createNell( geometry, -5, 4.5, 32);
+                                  checkMaterials(geometry.materials);
                                 }
                                 loader.load( { model: "obj/sintel/sintel.js",
                                                callback: nellCallback } );
@@ -232,10 +270,10 @@ var normalTexture = THREE.ImageUtils.loadTexture("obj/watchtower/Wachturm_tex_x_
                                 }
 
                                 material = new THREE.MeshFaceMaterial();
-                                zmesh = new THREE.Mesh( geometry, material );
-                                zmesh.position.set( x, y, z );
-                                zmesh.scale.set( 100, 100, 100 );
-				scene.add( zmesh );
+                                towerMesh = new THREE.Mesh( geometry, material );
+                                towerMesh.position.set( x, y, z );
+                                towerMesh.scale.set( 100, 100, 100 );
+				scene.add( towerMesh );
 			}
                         function createNell( geometry, x, y, z) {
                                 // bugs in material export
@@ -245,23 +283,287 @@ var normalTexture = THREE.ImageUtils.loadTexture("obj/watchtower/Wachturm_tex_x_
                                   }
                                 }
                                 material = new THREE.MeshFaceMaterial();
-                                zmesh = new THREE.Mesh( geometry, material );
-                                zmesh.position.set( x, y, z );
-zmesh.position.set(45,-187,-20);
-                                zmesh.scale.set( 16, 16, 16 );
+                                nellMesh = new THREE.Mesh( geometry, material );
+
+                                var nellWrapper = new THREE.Object3D();
+                                nellWrapper.add(nellMesh);
+                                nellWrapper.position.set( x, y, z );
+                                //nellWrapper.position.set(45,-187,-20);
+                                nellWrapper.scale.set( 16, 16, 16 );
+
+//nellMesh.rotation.y = 75*Math.PI/180; // XXX
+cameraAnimation = newCameraAnim(camera, nellMesh);
 
                                 // needs to be doublesided for the hair.
                                 // if we could separate out the hair,
                                 // we wouldn't need to make the
                                 // whole mesh double sided.
-                                zmesh.doubleSided = true;
-				scene.add( zmesh );
+                                nellMesh.doubleSided = true;
+                                // XXX probably ought to adjust the frustum
+                                // instead
+                                nellMesh.frustumCulled = false;
+				scene.add( nellWrapper );
                         }
 
-			function onDocumentMouseMove(event) {
-				mouseX = ( event.clientX - windowHalfX );
-				mouseY = ( event.clientY - windowHalfY );
+			function onDocumentKeyDown(event) {
+                          if (event.altKey) return;
+                          if (event.keyCode == 13) {
+                            if (cameraAnimation.isPlaying)
+                              cameraAnimation.stop();
+                            cameraAnimation.play(0, false);
+                          }
+                          if (event.keyCode != 32) return;
+                          // space key pressed; dump camera state
+                          console.log("pos: ["+camera.position.x+","+camera.position.y+","+camera.position.z+"], "
++"rot: ["+camera.quaternion.x+","+camera.quaternion.y+","+camera.quaternion.z+","+camera.quaternion.w+"],");
+                          return;
 			}
+
+function onWindowResize( event ) {
+  // force aspect ratio to 4:3 for accurate reflection of Nell demo
+  var w = window.innerWidth, h = window.innerHeight;
+  if (w > h*SCREEN_ASPECT_RATIO) {
+    w = Math.round(h*SCREEN_ASPECT_RATIO);
+  } else if (w < h*SCREEN_ASPECT_RATIO) {
+    h = Math.round(w/SCREEN_ASPECT_RATIO);
+  }
+
+  webglRenderer.setSize( w, h );
+  // center the element, for nice letter boxing.
+  webglRenderer.domElement.style.left=Math.floor((window.innerWidth-w)/2)+"px";
+  webglRenderer.domElement.style.top=Math.floor((window.innerHeight-h)/2)+"px";
+}
+
+// make camera animation
+function goingUpLadder(d) {
+return [
+/* start point */
+{ time: d*0, pos: [0,0,500 ], rot: [0,0,0,1], scl: [1,1,1] },
+/* near base of ladder */
+{ time: d*0.3,
+  pos: [40,-220,150],
+  rot: [0.03570120490665111,0.2576908996894242,0.0513061237080462,0.9642035603831164],
+  scl: [1,1,1] },
+/* base of ladder */
+{ time: d*0.5,
+  pos: [78.45604508538375,-229.3541188687921,49.60686397868412],
+  rot: [0.03570120490665111,0.2576908996894242,0.0513061237080462,0.9642035603831164],
+  scl: [1,1,1] },
+/* top of ladder */
+{ time: d*0.7,
+  pos: [67.7545477248432,-202.13393839672497,25.121656610273103],
+  rot: [0.4505901558301288, 0.2437963744607003, -0.0731738387431993, 0.8556736694513445],
+  scl: [1,1,1] },
+/* door */
+{ time: d*0.8,
+  pos: [59.83990446704059,-170.12963088188894,-16.34263398717385],
+  rot: [0.04840418662856043, 0.8372224891189415, -0.015301642215463287,0.5445010543385084],
+  scl: [1,1,1] },
+{ time: d*0.85,
+  pos: [59.83990446704059,-140,-16.34263398717385],
+  rot: [0.04840418662856043, 0.8372224891189415, -0.015301642215463287,0.5445010543385084],
+  scl: [1,1,1] },
+/* top of the world */
+{ time: d*1.0,
+  pos: [ 6.90673638355521,105.1858662482715,13.200703136468803 ],
+  rot: [0.016186822141821013, 0.8776587870094028, 0.47899708959182097,0.0038507838977055874],
+  scl: [1,1,1] },
+];
+}
+
+function lookingOut1(d) {
+return [
+/* start point */
+{ time: d*0, pos: [0,0,500 ], rot: [0,0,0,1], scl: [1,1,1] },
+/* high over the shoulder */
+{ time: d*0.5,
+  pos: [ 6.90673638355521,105.1858662482715,13.200703136468803 ],
+  rot: [0.016186822141821013, 0.8776587870094028, 0.47899708959182097,0.0038507838977055874],
+  scl: [1,1,1] },
+/* Looking over her shoulder */
+{ time: d*1.0,
+  pos: [ 5.407840886448313,30.155213325385525,31.85226672076413 ],
+  rot: [-0.16538934053139817, 0.899722100667075, 0.1505288017324383,0.3748167384986517],
+  scl: [1,1,1] },
+];
+}
+
+function lookingIn1(d) {
+return [
+/* start point */
+{ time: d*0, pos: [0,0,500 ], rot: [0,0,0,1], scl: [1,1,1] },
+/* Far outside "all that you survey" */
+{ time: d*0.45,
+  pos: [87.4378445392685,36.38907262246511,161.94241232398792],
+  rot: [-0.05762647744248622, 0.6064004810316195, 0.004620576117015417,0.7930550396905145],
+  scl: [1,1,1] },
+/* transition: starting to turn back in */
+{ time: d*0.75,
+  pos: [12.710581964802797,24.31324024702604,85.85685829438287],
+  rot: [-0.053607496694633654,0.47434352510175554,0.012225562769013137,0.8786210742450197],
+  scl: [1,1,1] },
+/* Close outside the window */
+{ time: d*1.0,
+  pos: [3.5547549171988893,24.4,47.77426125550683],
+  rot: [0, 0.5202813595993578, 0,0.8539949103205715],
+  scl: [1,1,1] },
+];
+}
+
+function lookingOut2(d) {
+return [
+/* start point */
+{ time: d*0, pos: [0,0,500 ], rot: [0,0,0,1], scl: [1,1,1] },
+/* friendly transition */
+{ time: d*0.2,
+  pos: [6.223026692881283,35/*21*/,95.02348627849359], 
+  rot: [-0.00014657089516004922,0.17024149998851437,0.0015650193408370194,0.9854011167606294],
+  scl: [1,1,1] },
+/* Looking over her shoulder */
+{ time: d*0.5,
+  pos: [ 5.407840886448313,30.155213325385525,31.85226672076413 ],
+  rot: [-0.16538934053139817, 0.899722100667075, 0.1505288017324383,0.3748167384986517],
+  scl: [1,1,1] },
+/* transition */
+{ time: d*0.85,
+  //pos: [0.5342335830410943,35,28.0197781229153],
+  //rot: [0.0018605689329750082, 0.9948789693930802, 0.0440479775643888, 0.09095136180949225 ],
+pos: [2.3799950128649847,35.6987416800753,18.946066624219107], rot: [-0.019383288304867585,0.9610598649060971,0.2603166905846986,0.09068321125821417],
+  scl: [1,1,1] },
+/* very close over shoulder */
+{ time: d*1.0,
+  pos: [0.5342335830410943,28.83110505383302,28.0197781229153],
+  rot: [0.0018605689329750082, 0.9948789693930802, 0.0440479775643888, 0.09095136180949225 ],
+  scl: [1,1,1] },
+//{ time: d*1.0, pos: [0,0,500 ], rot: [0,0,0,1], scl: [1,1,1] },
+];
+}
+
+function lookingOut3(d) {
+return [
+/* start point */
+{ time: d*0,
+  pos: [-29.806178969030253,943.9658258784326,-290.0882948304415],
+  rot: [-0.004623343387481897,0.7850600551559189,0.6193082344041166,-0.01080024507248822],
+  scl: [1,1,1] },
+{ time: d*0.25,
+  pos: [-52.073727764493114,172.95858876140488,-369.6872735712847],
+  rot: [0.020748032256284757,0.9789669484684601,0.18940252548193534,-0.07293775637353388],
+  scl: [1,1,1] },
+/* approaching the castle */
+{ time: d*0.5,
+  pos: [17.65947476051517,49.97170228624011,-63.91731895085425],
+  rot: [-0.013159168717706357,0.9740041812026577,0.20746142549372384,0.09001360014139215],
+  scl: [1,1,1] },
+/* very close over shoulder */
+{ time: d*0.75,
+  pos: [0.5342335830410943,28.83110505383302,28.0197781229153],
+  rot: [0.0018605689329750082, 0.9948789693930802, 0.0440479775643888, 0.09095136180949225 ],
+  scl: [1,1,1] },
+/* Close inside */
+{ time: d*1.0,
+  pos: [3.5632446374851985,27.25,36.04093912400009],
+  rot: [0.00229506369440185,0.8118231091248624,-0.0032336894062565324,0.5838899857218803],
+  scl: [1,1,1] },
+];
+}
+
+function lookingOut4Test(d) {
+return [
+{ time: d*0,
+  pos: [12.063377421847905,26.589637629197256,-0.08852178411155076],
+  rot: [0.020523055048583306,0.9844992464765692,-0.011235820383800334,0.17382115590118033],
+  scl: [1,1,1] },
+{ time: d*1,
+  pos: [18.301135654049965,26.522709921444015,13.893909796930792],
+  rot: [0.016625456061792415,0.89830169016871,-0.016463099919566068,0.4387557794397672],
+  scl: [1,1,1] },
+];
+}
+
+function lookingOut4(d) {
+return [
+// start point
+{ time: d*0,
+  pos: [562.0678607847752,385.948104381798,769.2077646659361],
+  rot: [-0.16216259656388612,0.3660269724296284,0.04339620133200024,0.9153383622680695],
+  scl: [1,1,1] },
+{ time: d*0.3,
+  pos: [336.6549662069228,64.26164450525405,74.0707499419214],
+  rot: [-0.14321866167596628,0.6495846397840549,0.11521511514280389,0.7377355135460024],
+  scl: [1,1,1] },
+{ time: d*0.6,
+  pos: [51.37068066354018,37.13605117747364,5.2591759961731075],
+  rot: [0.002153274380346645,0.7858502126799505,-0.0033297858760646996,0.6184041713688001],
+  scl: [1,1,1] },
+//{ time: d*0.75,
+//  pos: [7.873127406508897,32.21064928874683,23.053188304563996],
+//  rot: [-0.017906051605057167,0.9672850892332174,0.08396456006489696,0.2387234427451735],
+//  scl: [1,1,1] },
+// Close inside
+/*
+{ time: d*1.0,
+  pos: [3.5632446374851985,27.25,36.04093912400009],
+  rot: [0.00229506369440185,0.8118231091248624,-0.0032336894062565324,0.5838899857218803],
+  scl: [1,1,1] },
+*/
+// Alternate close inside
+/*
+{ time: d*1.0,
+  pos: [4.428669331807631,27.37523547186973,38.604812881348266],
+  rot: [0.001881064710335808,0.7340682079460074,-0.003490796484045799,0.6790641663483631],
+  scl: [1,1,1] },
+*/
+// Another alternate close inside; this is used with
+// nellMesh.rotation.y = 75*Math.PI/180;
+/*{ time: d*0.85,
+  pos: [6.21971930521053,30.254357389031576,33.44176738097976], rot: [0.02163662165458933,0.8112031871287818,-0.03012473560068145,0.5835869653277554],
+  scl: [1,1,1] },*/
+{ time: d*1.0,
+  pos: [3.6300560859407414,27.35263292141592,34.504064703937686], rot: [0.021675621492059934,0.8112516137740932,-0.0301783699879861,0.583515426160036],
+  scl: [1,1,1] },
+];
+}
+function lookingOut4Nell(d) {
+return [
+// start point
+{ time: d*0, pos:[0,0,0], rot: [0,0,0,1], scl:[1,1,1] },
+{ time: d*0.94, pos:[0,0,0], rot: [0,0,0,1], scl:[1,1,1] },
+{ time: d*1.0, pos:[0,0,0], rot: [0,0.6087614290087207,0,0.7933533402912352], scl:[1,1,1] },
+];
+}
+
+var CAMERA_ANIM_NAME = "Camera flythrough";
+function mkCameraAnim() {
+  var d = 15 * 1000; // 15 seconds duration
+  var parentKeys = {
+    keys: [ { time: 0, pos:[0,0,0], rot:[0,0,0,1], scl:[1,1,1]},
+            { time: d, pos:[0,0,0], rot:[0,0,0,1], scl:[1,1,1]} ]
+  };
+  var cameraKeys = { keys: lookingOut4(d) };
+  var nellKeys = { keys: lookingOut4Nell(d) };
+  var animationData = {
+    name: CAMERA_ANIM_NAME, fps: 1, length: d,
+    hierarchy: [ parentKeys, cameraKeys, nellKeys ]
+  };
+  THREE.AnimationHandler.add( animationData );
+}
+function newCameraAnim(camera, nellMesh) {
+  var root = new THREE.Object3D();
+  var a = new THREE.Animation( root, CAMERA_ANIM_NAME,
+    THREE.AnimationHandler.CATMULLROM/*LINEAR*//*CATMULLROM_FORWARD*/,
+    false );
+  // HACK!  if we add nell directly to the object, she gets removed from
+  // her wrapper and the scene.
+  a.hierarchy = [ root, camera ];
+  if (nellMesh) a.hierarchy.push(nellMesh);
+  return a;
+}
+mkCameraAnim();
+cameraAnimation = newCameraAnim(camera, null);
+cameraAnimation.play(false, 0);
+cameraAnimation.stop(); // jump to start point of animation
+
 
 			//
 
@@ -274,24 +576,37 @@ zmesh.position.set(45,-187,-20);
 
 			}
 
-var rotm = new THREE.Matrix4().setRotationY(2*Math.PI/180);
-//rotm.multiply(rotm, new THREE.Matrix4().setRotationZ(3*Math.PI/180));
+var rotm = new THREE.Matrix4().setRotationY(1*Math.PI/180);
 
+var lastFrame = Date.now();
 			function render() {
+
+var deltaTime = Date.now() - lastFrame;
+lastFrame += deltaTime;
+THREE.AnimationHandler.update(deltaTime);
 
 if (controls) controls.update();
 // move light around
 if (rotm && directionalLight && directionalLight.position && lightSphere) {
 rotm.multiplyVector3(directionalLight.position);
 directionalLight.position.normalize();
-lightSphere.position.copy(directionalLight.position).multiplyScalar(70);
+lightSphere.position.copy(directionalLight.position).multiplyScalar(200);
 }
 
 				webglRenderer.render( scene, camera );
 
 			}
 
+window.addEventListener( 'resize', onWindowResize, false );
+onWindowResize();
+animate();
 		</script>
-
+<div style="position: absolute; width: 100%; text-align: center; top:
+  0; left: 0; color: black; font-size: 10px;">
+WSAD=forward/back/left/right, RF=up/down, QE=roll left/right, arrows to tilt.
+<br/>
+Space prints current camera position to console.<br/>
+Enter restarts camera animation.
+</div>
 	</body>
 </html>
