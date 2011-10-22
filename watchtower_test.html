@@ -165,12 +165,12 @@ function init_controls(camera) {
 				var shader = THREE.ShaderUtils.lib[ "normal" ];
 				var uniforms = THREE.UniformsUtils.clone( shader.uniforms );
 
-var normalTexture = THREE.ImageUtils.loadTexture("obj/watchtower/Wachturm_tex_x_NRM_fixed.png" );
+var normalTexture = THREE.ImageUtils.loadTexture("obj/watchtower/Wachturm_tex_x_NRM_fixed.jpg" );
 				uniforms[ "tNormal" ].texture = normalTexture;
 				//uniforms[ "uNormalScale" ].value = -2.96315336227417;
 				uniforms[ "uNormalScale" ].value = 2.9631;
 
-var diffuseTexture = THREE.ImageUtils.loadTexture("obj/watchtower/Wachturm_tex_x.png" );
+var diffuseTexture = THREE.ImageUtils.loadTexture("obj/watchtower/Wachturm_tex_x.jpg" );
 				uniforms[ "tDiffuse" ].texture = diffuseTexture;
 
 				uniforms[ "enableAO" ].value = false;
