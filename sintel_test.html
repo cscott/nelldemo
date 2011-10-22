@@ -143,7 +143,7 @@ function init_controls(camera) {
 
 				// LIGHTS
 
-				var ambient = new THREE.AmbientLight( 0xFFFFFF/*0x221100*/ );
+				var ambient = new THREE.AmbientLight( 0x221100 );
 				scene.add( ambient );
 
 				directionalLight = new THREE.DirectionalLight( 0xffeedd );
@@ -151,7 +151,7 @@ function init_controls(camera) {
 //directionalLight.intensity = 5;
 				scene.add( directionalLight );
 
-var spotLight = new THREE.SpotLight(0xFFFFFF);
+var spotLight = new THREE.SpotLight(0x888888);
 spotLight.position.set(0,30,70);
 spotLight.target.position.set(0,FLOOR,0);
 //spotLight.intensity = 5;
@@ -246,6 +246,12 @@ var diffuseTexture = THREE.ImageUtils.loadTexture("obj/watchtower/Wachturm_tex_x
                                   }
                                 }
 */
+                                // bugs in material export
+                                for (var i=0;i<geometry.materials.length; i++) {
+                                  if (geometry.materials[i][0].map) {
+                                    geometry.materials[i][0].color.setRGB(1,1,1);
+                                  }
+                                }
                                 material = new THREE.MeshFaceMaterial();
                                 zmesh = new THREE.Mesh( geometry, material );
                                 zmesh.position.set( x+00, y+00, z );
