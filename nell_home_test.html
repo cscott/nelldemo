@@ -24,6 +24,10 @@
 	</head>
 
 	<body>
+<audio id="harbour-sounds"
+       src="sounds/95256__inchadney__catterline-harbour-looped.ogg"
+       autobuffer loop autoplay preload="auto">
+</audio>
 		<script src="Three.js"></script>
 
 		<script src="js/Detector.js"></script>
@@ -47,10 +51,8 @@
                         var directionalLight, lightSphere;
                         var cameraAnimation;
 
-			var windowHalfX = window.innerWidth / 2;
-			var windowHalfY = window.innerHeight / 2;
-
-			var bwebgl = document.getElementById( "rwebgl" );
+                        var harbourSounds = document.getElementById('harbour-sounds');
+                        harbourSounds.controls = false;
 
 		var controls;
 function init_controls(camera) {
@@ -579,6 +581,8 @@ cameraAnimation.stop(); // jump to start point of animation
 var rotm = new THREE.Matrix4().setRotationY(1*Math.PI/180);
 
 var lastFrame = Date.now();
+var MAX_VOLUME_HEIGHT=20;
+var VOLUME_EXPONENT=0.75;
 			function render() {
 
 var deltaTime = Date.now() - lastFrame;
@@ -594,6 +598,9 @@ lightSphere.position.copy(directionalLight.position).multiplyScalar(200);
 }
 
 				webglRenderer.render( scene, camera );
+// adjust sound volume w/ camera position
+// tricky: volume is 0-1, but scale is not linear!
+harbourSounds.volume = Math.pow(MAX_VOLUME_HEIGHT,VOLUME_EXPONENT) / Math.pow(Math.max(camera.position.y,MAX_VOLUME_HEIGHT), VOLUME_EXPONENT);
 
 			}
 
@@ -608,7 +615,5 @@ WSAD=forward/back/left/right, RF=up/down, QE=roll left/right, arrows to tilt.
 Space prints current camera position to console.<br/>
 Enter restarts camera animation.
 </div>
-<audio src="sounds/95256__inchadney__catterline-harbour-looped.ogg" autobuffer loop autoplay preload="auto">
-</audio>
 	</body>
 </html>
