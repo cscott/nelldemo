@@ -61,6 +61,7 @@ function WorldTextures() {
   // assign to properties.
   this.tileMaterials = tileMaterials;
   this.edgeMaterial = edgeMaterial;
+  this.appTexture = appTexture;
 }
 WorldTextures.prototype = {}
 WorldTextures.constructor = WorldTextures;
@@ -173,15 +174,20 @@ function _updateHex(parent, world, h, addEdges) {
     }
 
     // app icon
-    /*
     var sprite = new THREE.Sprite(
-      { map: appTexture, useScreenCoordinates: false, color: 0xffffff,
+      { map: parent.textures.appTexture,
+        useScreenCoordinates: false,
+        color: 0xffffff,
         alignment: THREE.SpriteAlignment.bottomCenter });
-    sprite.position.set( xoff, yoff, BASE_HEIGHT+COLOR_OFFSET[h.color]);
+    sprite.position.set( xoff, yoff,
+      WorldConst.BASE_HEIGHT +
+      WorldConst.MOUNTAIN_OFFSET
+      /* WorldConst.COLOR_OFFSET[h.color] */);
     sprite.scale.set(1/128,1/128,1/128);
-    h.objs.push(sprite);
-    parent.add(sprite);
-    */
+    if (false) {
+      h.objs.push(sprite);
+      parent.add(sprite);
+    }
 
     if (!addEdges) return;
 
