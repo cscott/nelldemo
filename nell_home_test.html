@@ -4,22 +4,37 @@
 		<title>Nell Flyby Demo</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+                <link href='http://fonts.googleapis.com/css?family=Alice' rel='stylesheet' type='text/css'>
 		<style>
 			body {
 				background:black/*letter boxing*/;
 				padding:0;
 				margin:0;
 				overflow:hidden;
-				font-family:georgia;
+				font-family: 'Alice', sans-serif;
 				text-align:center;
 			}
                         canvas { display: block; padding: 0; margin: 0; }
 			h1 { }
 			a { color:skyblue }
 
-			#d { text-align:center; margin:1em 0 -9.2em 0; z-index:0; position:relative; display:block }
-			.button { background:#000; color:#fff; padding:0.2em 0.5em; cursor:pointer }
-			.inactive { background:#999; color:#eee }
+#screen-wrapper { display: none; /* hide while loading */ }
+#screen-wrapper, #speech, #narrator { position: absolute; }
+#speech { top: 8%; left: 4%; height: 41%; width: 59%; }
+#speech, #narrator {
+  background: white; border: 2px solid black; border-radius: 15px;
+}
+#speech { padding: 10px; font-size: 20px; text-align: left; }
+
+#tail {
+  position: absolute;
+  background: url("textures/speech-bubble.png");
+  width: 37px; height: 19px;
+  bottom: -2px; /* width of border */
+  right: -21px; /* stick out of the right side of the bubble */
+}
+
+#narrator { bottom: 5%; left: 4%; right: 4%; opacity: 0.7; padding: 10px; }
 		</style>
 	</head>
 
@@ -53,6 +68,8 @@
 
                         var harbourSounds = document.getElementById('harbour-sounds');
                         harbourSounds.controls = false;
+
+                        var speechBubble;
 
 		var controls;
 function init_controls(camera) {
@@ -332,8 +349,18 @@ function onWindowResize( event ) {
 
   webglRenderer.setSize( w, h );
   // center the element, for nice letter boxing.
-  webglRenderer.domElement.style.left=Math.floor((window.innerWidth-w)/2)+"px";
-  webglRenderer.domElement.style.top=Math.floor((window.innerHeight-h)/2)+"px";
+  var l = Math.floor((window.innerWidth-w)/2);
+  var t = Math.floor((window.innerHeight-h)/2);
+  webglRenderer.domElement.style.left=l+"px";
+  webglRenderer.domElement.style.top =t+"px";
+
+  // duplicate in screen wrapper
+  var sw = document.getElementById("screen-wrapper");
+  if (!sw) return;
+  sw.style.height = h+"px";
+  sw.style.width = w+"px";
+  sw.style.left = l+"px";
+  sw.style.top = t+"px";
 }
 
 // make camera animation
@@ -602,12 +629,33 @@ lightSphere.position.copy(directionalLight.position).multiplyScalar(200);
 // tricky: volume is 0-1, but scale is not linear!
 harbourSounds.volume = Math.pow(MAX_VOLUME_HEIGHT,VOLUME_EXPONENT) / Math.pow(Math.max(camera.position.y,MAX_VOLUME_HEIGHT), VOLUME_EXPONENT);
 
+// make speech bubble visible as we near Nell
+// XXX HACK should be a sprite
+var cameraTarget = new THREE.Vector3(4.090258821991789,27.453388264979004,34.17204742963038);
+var dist = camera.position.distanceTo(cameraTarget);
+speechBubble.style.opacity = Math.max(1-(dist/1), 0) * 0.7;
+
 			}
 
 window.addEventListener( 'resize', onWindowResize, false );
-onWindowResize();
-animate();
+window.onload=function() {
+  speechBubble = document.getElementById('speech');
+  speechBubble.style.opacity = 0; // invisible
+  onWindowResize();
+  document.getElementById('screen-wrapper').style.display='block';
+  animate();
+};
 		</script>
+<div id="screen-wrapper">
+<div id="speech">
+Hello!
+<div id="tail"></div>
+</div>
+<div id="narrator">
+Once upon a time, there was a little girl named Nell<br/>
+who lived in a castle in a land far away.
+</div>
+</div>
 <div style="position: absolute; width: 100%; text-align: center; top:
   0; left: 0; color: black; font-size: 10px;">
 WSAD=forward/back/left/right, RF=up/down, QE=roll left/right, arrows to tilt.
