@@ -126,7 +126,7 @@ function init_controls(camera) {
 				xm.map.needsUpdate = true;
 				xm.map.repeat.set( 5, 5 );
 
-var xx = document.createElement("image");
+var xx = new Image();
 xx.onload = function() { xm.map.image = xx; xm.map.needsUpdate = true; completionCallback(); }
 xx.src = "textures/island-texture-128.png";
 
