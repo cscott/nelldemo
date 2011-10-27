@@ -40,8 +40,9 @@ function init() {
     light.castShadow = true;
     scene.add( light );
 
-    geometry = new THREE.CubeGeometry( size, size, size );
-    geometry.applyMatrix( new THREE.Matrix4().setTranslation( 0, size / 2, 0 ) );
+    geometry = new THREE.HexPrismGeometry( size/2, size );
+    geometry.applyMatrix( new THREE.Matrix4().setRotationX(Math.PI/2) );
+    geometry.applyMatrix( new THREE.Matrix4().setTranslation( 0, size/2, 0 ) );
     material = new THREE.MeshLambertMaterial( { color: 0xd0d0d0 } );
 
     for ( var i = 0, l = res * res; i < l; i ++ ) {

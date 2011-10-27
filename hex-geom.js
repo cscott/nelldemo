@@ -1,6 +1,54 @@
 // geometry for hex segments, cores, and edge pieces
 var SQRT3 = Math.sqrt(3);
 
+THREE.HexPrismGeometry = function(radius, height) {
+  THREE.Geometry.call(this);
+  var v = new THREE.Vector3(radius,0,0);
+  var m = new THREE.Matrix4();
+  var i,j;
+  // vertices
+  for (j=0; j<=6; j+=6) {
+    v.z = (j==0) ? (-height/2) : (height/2);
+    for (i=0; i<6; i++) {
+      var vv = m.setRotationZ(-i*60*Math.PI/180).multiplyVector3(v.clone());
+      this.vertices.push(new THREE.Vertex(vv));
+    }
+  }
+  // faces
+  var that = this; // bind for use in nested functions
+  function addFace(f) {
+    var uvs = [];
+    function addUV(v) {
+      var p = that.vertices[v];
+      uvs.push(new THREE.UV(p.x/radius, p.y/radius));
+    }
+    addUV(f.a); addUV(f.b); addUV(f.c); addUV(f.d);
+    that.faces.push(f);
+    that.faceVertexUvs[0/* uv layer 0*/].push(uvs);
+  }
+  for (j=0; j<=6; j+=6) {
+    // top/bottom face
+    addFace(new THREE.Face4(j+0, j+1, j+2, j+3));
+    addFace(new THREE.Face4(j+3, j+4, j+5, j+0));
+  }
+  for (i=0; i<6; i++) {
+    // side faces
+    var nexti = (i+1) % 6;
+    this.faces.push(new THREE.Face4(i, i+6, nexti+6, nexti));
+    var uvs = [];
+    uvs.push(new THREE.UV(i/6, 0));
+    uvs.push(new THREE.UV(i/6, 1));
+    uvs.push(new THREE.UV((i+1)/6, 1));
+    uvs.push(new THREE.UV((i+1)/6, 0));
+    this.faceVertexUvs[0/*uv layer 0*/].push(uvs);
+  }
+
+  this.computeCentroids();
+  this.computeFaceNormals();
+};
+THREE.HexPrismGeometry.prototype = new THREE.Geometry();
+THREE.HexPrismGeometry.prototype.constructor = THREE.HexPrismGeometry;
+
 THREE.HexCoreGeometry = function(baseHeight, centerOffset) {
   THREE.Geometry.call(this);
   var v = new THREE.Vector3(1/4, SQRT3/4, baseHeight);
