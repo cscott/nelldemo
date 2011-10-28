@@ -1,4 +1,7 @@
 var SCREEN_ASPECT_RATIO = 4/3;
+var SHADOW_MAP_SIZE = 512;
+var DEBUG_SHADOW_MAP = false;
+
 var size = 10, xres = 32, yres = 16;
 var buffer1 = [], buffer2 = [], temp;
 var grid = [], plane;
@@ -7,6 +10,7 @@ var geometry, material;
 var mouse, projector, ray, intersects = [];
 var stats;
 var controls;
+var shadow;
 
 function init() {
 
@@ -38,7 +42,7 @@ function init() {
     scene.add( new THREE.AmbientLight( 0x808080 ) );
 
     light = new THREE.SpotLight( 0xffffff, 1.25 );
-    light.position.set( -size*20, size*20, size*20 );
+    light.position.set( -size*24, size*10, size*18 );
     light.target.position.set( 0, 0, 0 );
     light.castShadow = true;
     scene.add( light );
@@ -74,18 +78,20 @@ function init() {
     scene.add( plane );
 
     renderer = new THREE.WebGLRenderer();
+    renderer.autoClear = false; // for shadowmap
+    renderer.setClearColorHex(0xBFD1E5);
 
     renderer.shadowMapEnabled = true;
     renderer.shadowMapSoft = true;
 
-    renderer.shadowCameraNear = 3;
-    renderer.shadowCameraFar = camera.far;
+    renderer.shadowCameraNear = 0.5;
+    renderer.shadowCameraFar = 2500;
     renderer.shadowCameraFov = 50;
 
-    renderer.shadowMapBias = 0.0039;
+    renderer.shadowMapBias = 0.00387;
     renderer.shadowMapDarkness = 0.5;
-    renderer.shadowMapWidth = 512;
-    renderer.shadowMapHeight = 512;
+    renderer.shadowMapWidth = SHADOW_MAP_SIZE;
+    renderer.shadowMapHeight = SHADOW_MAP_SIZE;
 
     container.appendChild( renderer.domElement );
     renderer.domElement.style.position = "absolute";
@@ -206,8 +212,48 @@ function render() {
       }
     }
 
+    renderer.clear();
     renderer.render( scene, camera );
+    if (DEBUG_SHADOW_MAP) {
+      shadow.hudMaterial.uniforms.tDiffuse.texture = renderer.shadowMap[ 0 ];
+      renderer.render( shadow.sceneHUD, shadow.cameraOrtho);
+    }
+}
 
+function init_shadow_hud(renderer, scene) {
+  // show shadow map
+  // (borrowed from webgl_shadowmap.html demo; don't expect me to understand
+  //  how this works!)
+  // XXX: this should resize onWindowResize, but I'm lazy.
+  var SCREEN_WIDTH = window.innerWidth, SCREEN_HEIGHT = window.innerHeight;
+  var cameraOrtho = new THREE.OrthographicCamera(
+    SCREEN_WIDTH / - 2, SCREEN_WIDTH / 2,
+    SCREEN_HEIGHT / 2, SCREEN_HEIGHT / - 2, -10, 1000 );
+  cameraOrtho.position.z = 10;
+
+  var shader = THREE.ShaderExtras[ "screen" ];
+  var uniforms = new THREE.UniformsUtils.clone( shader.uniforms );
+
+  var hudMaterial = new THREE.ShaderMaterial( {
+    vertexShader: shader.vertexShader, fragmentShader: shader.fragmentShader,
+    uniforms: uniforms } );
+
+  var hudGeo = new THREE.PlaneGeometry(
+    SHADOW_MAP_SIZE / 2, SHADOW_MAP_SIZE / 2 );
+  var hudMesh = new THREE.Mesh( hudGeo, hudMaterial );
+  hudMesh.position.x = ( SCREEN_WIDTH - SHADOW_MAP_SIZE / 2 ) * -0.5;
+  hudMesh.position.y = ( SCREEN_HEIGHT - SHADOW_MAP_SIZE / 2 ) * -0.5;
+
+  var sceneHUD = new THREE.Scene();
+  sceneHUD.add( hudMesh );
+
+  cameraOrtho.lookAt( sceneHUD.position );
+  return { hudMaterial: hudMaterial,
+	   sceneHUD: sceneHUD,
+	   cameraOrtho: cameraOrtho };
+}
+if (DEBUG_SHADOW_MAP) {
+  shadow = init_shadow_hud(renderer, scene);
 }
 
 function onWindowResize( event ) {
