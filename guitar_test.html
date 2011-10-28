@@ -4,47 +4,14 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>Karplus-Strong string synthesis test</title>
 <script src="js/audiolib.js"></script>
+<script src="ks.js"></script>
 <script type="text/javascript">
 var dev, sampleRate, ks;
-
-function KS(sampleRate, freq) {
-  this.reset(sampleRate, freq);
-}
-KS.prototype = {
-  sampleRate: 1,
-  bufferPos: 0,
-  bufferLen: 0,
-  buffer: null,
-  sample: 0,
-  plucked: false,
-
-  generate: function() {
-    var next = this.buffer[this.bufferPos];
-    this.buffer[this.bufferPos++] = (next + this.sample) / 2;
-    this.sample = next;
-    if (this.bufferPos >= this.bufferLen) {
-      this.bufferPos = 0;
-    }
-  },
-  getMix: function() {
-    return this.sample;
-  },
-  reset: function(sampleRate, freq) {
-    this.sampleRate = sampleRate || this.sampleRate;
-    this.bufferLen = (freq==0) ? 100 : Math.round((sampleRate/freq)-.5);
-    this.buffer = new Float32Array(this.bufferLen);
-    for (var i=0; i<this.bufferLen; i++) {
-      this.buffer[i] = (freq == 0) ? 0 : Math.random();
-    }
-    this.bufferPos = 0;
-    this.plucked = false;
-  }
-}
 
 function pluck() {
   var f = parseInt(document.getElementById('f').value, 10);
   if (f==0) { f = 440; }
-  ks.reset(sampleRate, f);
+  ks.reset(null, f);
 }
 
 function audioProcess(buffer, channelCount) {
