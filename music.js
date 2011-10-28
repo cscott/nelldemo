@@ -12,6 +12,9 @@ var stats;
 var controls;
 var shadow;
 
+var audioDev;
+var ks=[];
+
 function init() {
 
     var container = document.body;
@@ -144,6 +147,7 @@ function render() {
 	  y >= 0 && y < yres ) {
 
 	buffer1[x][y] = 10;
+	playNote(x, y);
       }
     }
 
@@ -271,16 +275,69 @@ function onWindowResize( event ) {
   renderer.domElement.style.top=Math.floor((window.innerHeight-h)/2)+"px";
 }
 
-if ( Detector.webgl ) {
+var frequencies = [];
+function initFrequencies() {
+  var pentatonic = [ 0, // D
+		     2, // E
+		     4, // F#
+		     7, // A
+		     9, // B
+		     12];
+  var BASE = 293.665/2; // D3
+  var _12ROOT2 = Math.pow(2, 1/12);
+  var y,i,octave;
+  for (y=0,octave=0; y<yres; y+=5,octave+=1) {
+    for (i=0; i<5; i++) {
+      var n = pentatonic[i] + 12*octave;
+      frequencies[y+i] = Math.pow(2, n/12)*BASE;
+    }
+  }
+}
 
+var last="";
+function playNote(x, y) {
+  var key = x + "," + y;
+  if (last == key) return;
+  last = key;
+  var freq = 440; // XXX
+  ks[y].reset(null, frequencies[y]);
+}
+function audioProcess(buffer, channelCount) {
+  var l = buffer.length, i, n, y;
+  for (i=0; i<l; i+=channelCount) {
+    for (y=0; y<yres; y++) { ks[y].generate(); }
+
+    for (n=0; n<channelCount; n++) {
+      buffer[n+i] = 0;
+      var channelPan = 1-(n/(channelCount-1));
+      for (y=0; y<yres; y++) {
+	// y = 0 is on left; y = yres-1 is on right
+	var samplePan = (y/(yres-1));
+	var sample = ks[y].getMix(); // remove DC
+	buffer[n+i] += Math.abs(channelPan - samplePan) * sample;
+      }
+      buffer[n+1] /= 2; // tweak volume down from maximum
+    }
+  }
+}
+
+window.onload = function() {
+  if ( Detector.webgl ) {
     init();
     window.addEventListener( 'resize', onWindowResize, false);
     onWindowResize();
+
+    // start audio engine
+    initFrequencies();
+    for (var y=0; y<yres; y++) {
+      ks[y] = new KS(44100, 0);
+    }
+    audioDev = audioLib.AudioDevice(audioProcess, 2);
+    for (var y=0; y<yres; y++) { ks[y].sampleRate = audioDev.sampleRate; }
+
+    // start animating!
     animate();
-
-} else {
-
+  } else {
     document.body.appendChild( Detector.getWebGLErrorMessage() );
-
-}
-
+  }
+};

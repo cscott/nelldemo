@@ -25,9 +25,10 @@ KS.prototype = {
     this.bufferLen = freq ? Math.round((this.sampleRate/freq)-.5) : 100;
     this.buffer = new Float32Array(this.bufferLen);
     for (var i=0; i<this.bufferLen; i++) {
-      this.buffer[i] = freq ? Math.random() : 0;
+      this.buffer[i] = freq ? 2*(Math.random()-0.5) : 0;
     }
     this.bufferPos = 0;
     this.plucked = false;
+    this.sample = 0;
   }
 }
