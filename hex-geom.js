@@ -26,11 +26,14 @@ THREE.HexPrismGeometry = function(radius, height) {
     that.faces.push(f);
     that.faceVertexUvs[0/* uv layer 0*/].push(uvs);
   }
-  for (j=0; j<=6; j+=6) {
-    // top/bottom face
-    addFace(new THREE.Face4(j+0, j+1, j+2, j+3));
-    addFace(new THREE.Face4(j+3, j+4, j+5, j+0));
-  }
+
+  // top face
+  addFace(new THREE.Face4(0, 1, 2, 3));
+  addFace(new THREE.Face4(3, 4, 5, 0));
+  // bottom face
+  addFace(new THREE.Face4(9, 8, 7, 6));
+  addFace(new THREE.Face4(6,11,10, 9));
+
   for (i=0; i<6; i++) {
     // side faces
     var nexti = (i+1) % 6;
