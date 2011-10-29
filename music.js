@@ -18,6 +18,7 @@ var audioDev, audioSeq;
 var ks=[];
 
 var song = [];
+var drawMode;
 
 function init() {
 
@@ -40,15 +41,10 @@ function init() {
     scene = new THREE.Scene();
 
     camera = new THREE.PerspectiveCamera( 50, SCREEN_ASPECT_RATIO, 1, 2000 );
-/*
-    camera.position.x = 0;
-    camera.position.y = size*-10.5;
-    camera.position.z = size*22;
-*/
     camera.position.x = 0;
     camera.position.y = -10*size;
     camera.position.z = size*50;
-    camera.setLens(110);
+    camera.setLens(105);
 
     camera.lookAt( new THREE.Vector3( 0, 0, 0 ) );
     scene.add( camera );
@@ -65,11 +61,13 @@ function init() {
     geometry.applyMatrix( new THREE.Matrix4().setTranslation( 0, 0, size/2 ) );
     defaultMaterial = new THREE.MeshLambertMaterial( { color: 0xd0d0d0 } );
     for (var y = 0; y < yres; y++) {
+	var hue = (y%5)/5;
+	var light = 0.4 + (y/yres)*0.6;
 	var color = new THREE.Color();
-	color.setHSV(y/yres, 1, 0.7);
+	color.setHSV(hue, 1, (light+2)/3);
 	songMaterials.push(new THREE.MeshLambertMaterial(
 	    { color: color.getHex() } ));
-	color.setHSV(y/yres, 0.5, 0.9);
+	color.setHSV(hue, 0.5, light);
 	nosongMaterials.push(new THREE.MeshLambertMaterial(
 	    { color: color.getHex() } ));
     }
@@ -129,7 +127,44 @@ function init() {
 
     renderer.domElement.addEventListener( 'mousemove', onDocumentMouseMove, false );
     renderer.domElement.addEventListener( 'mousedown', onDocumentMouseDown, false );
+    renderer.domElement.addEventListener( 'mouseup', onDocumentMouseUp, false );
 
+    // add control panel
+    var buttons = [
+	{ id: "clearButton", label: "Clear Song" },
+	{ id: "drawButton", label: "Draw" },
+	{ id: "eraseButton", label: "Erase" }
+    ];
+    for (var i=0; i<buttons.length; i++) {
+	var button = document.createElement("div");
+	button.className="button";
+	button.id = buttons[i].id;
+	button.innerHTML = buttons[i].label;
+	container.appendChild(button);
+    }
+    document.getElementById('clearButton').onclick = clearGrid;
+    document.getElementById('drawButton').onclick = clickDraw;
+    document.getElementById('eraseButton').onclick = clickErase;
+    clickDraw();
+}
+
+function clearGrid() {
+    for (var x=0; x<xres; x++) {
+	for (var y=0; y<yres; y++) {
+	    song[x][y] = false;
+	}
+    }
+}
+
+function clickDraw() {
+    document.getElementById('drawButton').className="button selected";
+    document.getElementById('eraseButton').className="button";
+    drawMode = true;
+}
+function clickErase() {
+    document.getElementById('drawButton').className="button";
+    document.getElementById('eraseButton').className="button selected";
+    drawMode = false;
 }
 
 function computeGridXY(offsetX, offsetY) {
@@ -160,16 +195,31 @@ function computeGridXY(offsetX, offsetY) {
     return null; // not a valid point.
 }
 
+var mouseDrag = false;
+function drawOrErase(x, y) {
+    var grid = computeGridXY(event.offsetX, event.offsetY);
+    if (!grid) return; // not in the grid
+    var was = song[grid.x][grid.y];
+    song[grid.x][grid.y] = drawMode;
+    if (drawMode && !was) {
+	triggerNote(grid.y);
+    }
+}
 function onDocumentMouseMove( event ) {
     lastMouse.x = event.offsetX;
     lastMouse.y = event.offsetY;
+
+    if (!mouseDrag) return; // no mouse down.
+    drawOrErase(lastMouse.x, lastMouse.y);
 }
 
 function onDocumentMouseDown( event ) {
-    var grid = computeGridXY(event.offsetX, event.offsetY);
-    if (!grid) return;
-    song[grid.x][grid.y] = !song[grid.x][grid.y];
-    triggerNote(grid.y);
+    mouseDrag = true;
+    drawOrErase(event.offsetX, event.offsetY);
+}
+
+function onDocumentMouseUp( event ) {
+    mouseDrag = false;
 }
 
 function animate() {

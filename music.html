@@ -8,6 +8,7 @@
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
                 <link href='http://fonts.googleapis.com/css?family=Alice' rel='stylesheet' type='text/css'>
 		<style>
+html, body { position: relative; height: 100%; width: 100%; }
 			body {
 				background:black/*letter boxing*/;
 				padding:0;
@@ -18,6 +19,26 @@
                                 position: relative;
 			}
                         canvas { display: block; padding: 0; margin: 0; }
+
+.button {
+position:absolute;
+top: 5px;
+border: 1px solid black;
+background: white;
+color: black;
+border-radius: 15px;
+padding: 5px;
+}
+.button:hover { cursor: pointer; }
+.button:hover, .button.selected {
+  color:white; background: #000; border-color: white;
+}
+.button.selected {
+  background: #666;
+}
+#clearButton { left: 20%; width: 10%; }
+#drawButton { left: 45%; width: 10%; }
+#eraseButton { left: 70%; width: 10%; }
 		</style>
         </head>
 	<body>
