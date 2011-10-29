@@ -478,7 +478,7 @@ window.onload = function() {
       steps.push(x);
       steps.push(x+1); // swing time!
     }
-    audioSeq = new audioLib.StepSequencer(audioDev.sampleRate, 125/4, steps);
+    audioSeq = new audioLib.StepSequencer(audioDev.sampleRate, 250/4, steps);
 
     // start animating!
     animate();
