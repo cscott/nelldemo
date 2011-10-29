@@ -11,7 +11,7 @@ KS.prototype = {
 
   generate: function() {
     var next = this.buffer[this.bufferPos];
-    this.buffer[this.bufferPos++] = (next + this.sample) / 2;
+    this.buffer[this.bufferPos++] = (next + this.sample) / 2.01;
     this.sample = next;
     if (this.bufferPos >= this.bufferLen) {
       this.bufferPos = 0;
@@ -29,6 +29,6 @@ KS.prototype = {
     }
     this.bufferPos = 0;
     this.plucked = false;
-    this.sample = 0;
+    this.sample = this.buffer[this.bufferLen-1];
   }
 }

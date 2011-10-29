@@ -283,12 +283,12 @@ function initFrequencies() {
 		     7, // A
 		     9, // B
 		     12];
-  var BASE = 293.665/2; // D3
-  var _12ROOT2 = Math.pow(2, 1/12);
+  var BASE = 440; // A4
+  var OFFSET = -19; // D3 (19 semitones below A)
   var y,i,octave;
   for (y=0,octave=0; y<yres; y+=5,octave+=1) {
     for (i=0; i<5; i++) {
-      var n = pentatonic[i] + 12*octave;
+      var n = pentatonic[i] + 12*octave + OFFSET;
       frequencies[y+i] = Math.pow(2, n/12)*BASE;
     }
   }
@@ -299,7 +299,6 @@ function playNote(x, y) {
   var key = x + "," + y;
   if (last == key) return;
   last = key;
-  var freq = 440; // XXX
   ks[y].reset(null, frequencies[y]);
 }
 function audioProcess(buffer, channelCount) {
