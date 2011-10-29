@@ -3,8 +3,8 @@
  *       https://ccrma.stanford.edu/realsimple/faust_strings/faust_strings.pdf
  */
 // Use freq=0 to suppress output.
-function KS(sampleRate, freq) {
-  this.reset(sampleRate, freq);
+function KS(sampleRate, freq, volume) {
+    this.reset(sampleRate, freq, volume);
 }
 KS.prototype = {
   // sample rate of this generator
@@ -43,15 +43,17 @@ KS.prototype = {
   getMix: function() {
     return this.sample;
   },
-  reset: function(sampleRate, freq) {
+  reset: function(sampleRate, freq, volume) {
+    volume = volume || 1;
     this.sampleRate = sampleRate || this.sampleRate;
     var length = freq ? ((this.sampleRate/freq)-.5) : 100;
     this.bufferLen = Math.floor(length);
     this.fracLen = length - this.bufferLen;
     this.buffer1 = new Float32Array(this.bufferLen);
     this.buffer2 = new Float32Array(this.bufferLen+1);
+    if (!freq) volume=0;
     for (var i=0; i<=this.bufferLen; i++) {
-      this.buffer2[i] = freq ? 2*(Math.random()-0.5) : 0;
+      this.buffer2[i] = 2*(Math.random()-0.5)*volume;
       if (i<this.bufferLen)
 	this.buffer1[i] = this.buffer2[i];
     }

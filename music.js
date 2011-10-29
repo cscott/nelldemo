@@ -2,6 +2,10 @@ var SCREEN_ASPECT_RATIO = 4/3;
 var SHADOW_MAP_SIZE = 512;
 var DEBUG_SHADOW_MAP = false;
 
+var PLAY_VOLUME = 1;
+var SEQ_VOLUME = 0.4;
+var PREVIEW_VOLUME = 0.75;
+
 var size = 10, xres = 32, yres = 16;
 var buffer1 = [], buffer2 = [], temp;
 var grid = [], plane;
@@ -216,14 +220,14 @@ function drawOrErase(x, y) {
     if (playMode) {
 	if (grid.y !== lastPlay) {
 	    lastPlay = grid.y;
-	    triggerNote(grid.y);
+	    triggerNote(grid.y, PLAY_VOLUME);
 	}
 	return;
     }
     var was = song[grid.x][grid.y];
     song[grid.x][grid.y] = drawMode;
     if (drawMode && !was) {
-	triggerNote(grid.y);
+	triggerNote(grid.y, PREVIEW_VOLUME);
     }
 }
 function onDocumentMouseMove( event ) {
@@ -417,15 +421,8 @@ function initFrequencies() {
   }
 }
 
-var last="";
-function playNote(x, y) {
-  var key = x + "," + y;
-  if (last == key) return;
-  last = key;
-  triggerNote(y);
-}
-function triggerNote(y) {
-  ks[y].reset(null, frequencies[y]);
+function triggerNote(y, volume) {
+    ks[y].reset(null, frequencies[y], volume);
 }
 var lastStep = -1;
 function audioProcess(buffer, channelCount) {
@@ -439,7 +436,7 @@ function audioProcess(buffer, channelCount) {
       lastStep = step;
       for (y=0; y<yres; y++) {
 	if (song[step][y]) {
-	  triggerNote(y);
+	  triggerNote(y, SEQ_VOLUME);
 	  buffer1[step][y] = 25;
 	}
       }
