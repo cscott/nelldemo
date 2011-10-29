@@ -68,6 +68,7 @@ function init_controls(camera) {
   controls.dynamicDampingFactor = 0.3;
 
   controls.keys = [ 65, 83, 68 ];
+		controls.target.set(0,FLOOR/2,0);
 		return controls;
 		}
 
@@ -83,7 +84,9 @@ function init_controls(camera) {
 				document.body.appendChild( container );
 
 				camera = new THREE.PerspectiveCamera( 75, SCREEN_WIDTH / SCREEN_HEIGHT, 1, 100000 );
-				camera.position.z = 500;
+                                camera.position.y = -85;
+				camera.position.z = 163;
+		camera.lookAt(new THREE.Vector3(0,FLOOR,0));
 
 				scene = new THREE.Scene();
 		controls = init_controls(camera);
@@ -223,7 +226,7 @@ var diffuseTexture = THREE.ImageUtils.loadTexture("obj/watchtower/Wachturm_tex_x
 				var loader = new THREE.JSONLoader();
 			        callback   = function(
 				geometry ) { createScene( geometry,
-				40, FLOOR, -20, 50, null/*material*/ ) };
+				0, FLOOR, 0, 50, null/*material*/ ) };
 				loader.load( { model: "obj/sintel/sintel_lite.js", callback: callback } );
 			}
 
@@ -249,7 +252,12 @@ var diffuseTexture = THREE.ImageUtils.loadTexture("obj/watchtower/Wachturm_tex_x
                                 zmesh.position.set( x+00, y+00, z );
                                 zmesh.scale.set( 100, 100, 100 );
 				//zmesh.overdraw = true;
-                                //zmesh.doubleSided = false;
+
+                                // needs to be doublesided for the hair.
+                                // if we could separate out the hair,
+                                // we wouldn't need to make the
+                                // whole mesh double sided.
+                                zmesh.doubleSided = true;
 				scene.add( zmesh );
 
 				createMaterialsPalette( geometry.materials, 100, b );

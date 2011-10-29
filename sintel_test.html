@@ -84,7 +84,8 @@ function init_controls(camera) {
 				document.body.appendChild( container );
 
 				camera = new THREE.PerspectiveCamera( 75, SCREEN_WIDTH / SCREEN_HEIGHT, 1, 100000 );
-				camera.position.z = 500;
+                                camera.position.y = -85;
+				camera.position.z = 163;
 		camera.lookAt(new THREE.Vector3(0,FLOOR,0));
 
 				scene = new THREE.Scene();
