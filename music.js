@@ -12,6 +12,7 @@ var grid = [], plane;
 var scene, camera, light, renderer;
 var geometry;
 var defaultMaterial, nosongMaterials=[], songMaterials=[];
+var lineMaterial, line;
 var mouse, projector, ray, intersects = [];
 var lastMouse;
 var stats;
@@ -61,9 +62,18 @@ function init() {
     light.castShadow = true;
     scene.add( light );
 
+    geometry = new THREE.Geometry();
+    geometry.vertices.push(new THREE.Vertex(new THREE.Vector3(0, -size*yres, size)));
+    geometry.vertices.push(new THREE.Vertex(new THREE.Vector3(0, +size*yres, size)));
+    lineMaterial = new THREE.LineBasicMaterial( {
+	color: 0xFFFFFF, opacity: 0.6, linewidth: size/2 } );
+    line = new THREE.Line(geometry, lineMaterial);
+    scene.add(line);
+
     geometry = new THREE.HexPrismGeometry( size/2, size );
     geometry.applyMatrix( new THREE.Matrix4().setTranslation( 0, 0, size/2 ) );
     defaultMaterial = new THREE.MeshLambertMaterial( { color: 0xd0d0d0 } );
+
     for (var y = 0; y < yres; y++) {
 	var hue = (y%5)/5;
 	var light = 0.4 + (y/yres)*0.6;
@@ -261,10 +271,14 @@ function render() {
     //controls.update(); // allow camera control for debugging
 
     // update colors
+    var step = audioSeq.getMix();
+    line.position.x = (step-xres/2)*size*3/4;
     for (var x=0; x<xres; x++) {
 	for (var y=0; y<yres; y++) {
 	    grid[x][y].materials[0] =
-		song[x][y] ? songMaterials[y] : nosongMaterials[y];
+		song[x][y] ? songMaterials[y] :
+		//x==step ? defaultMaterial :
+		nosongMaterials[y];
 	}
     }
 
