@@ -6,14 +6,18 @@ var size = 10, xres = 32, yres = 16;
 var buffer1 = [], buffer2 = [], temp;
 var grid = [], plane;
 var scene, camera, light, renderer;
-var geometry, material;
+var geometry;
+var defaultMaterial, nosongMaterials=[], songMaterials=[];
 var mouse, projector, ray, intersects = [];
+var lastMouse;
 var stats;
 var controls;
 var shadow;
 
-var audioDev;
+var audioDev, audioSeq;
 var ks=[];
+
+var song = [];
 
 function init() {
 
@@ -36,9 +40,16 @@ function init() {
     scene = new THREE.Scene();
 
     camera = new THREE.PerspectiveCamera( 50, SCREEN_ASPECT_RATIO, 1, 2000 );
+/*
     camera.position.x = 0;
     camera.position.y = size*-10.5;
     camera.position.z = size*22;
+*/
+    camera.position.x = 0;
+    camera.position.y = -10*size;
+    camera.position.z = size*50;
+    camera.setLens(110);
+
     camera.lookAt( new THREE.Vector3( 0, 0, 0 ) );
     scene.add( camera );
 
@@ -52,13 +63,22 @@ function init() {
 
     geometry = new THREE.HexPrismGeometry( size/2, size );
     geometry.applyMatrix( new THREE.Matrix4().setTranslation( 0, 0, size/2 ) );
-    material = new THREE.MeshLambertMaterial( { color: 0xd0d0d0 } );
-
+    defaultMaterial = new THREE.MeshLambertMaterial( { color: 0xd0d0d0 } );
+    for (var y = 0; y < yres; y++) {
+	var color = new THREE.Color();
+	color.setHSV(y/yres, 1, 0.7);
+	songMaterials.push(new THREE.MeshLambertMaterial(
+	    { color: color.getHex() } ));
+	color.setHSV(y/yres, 0.5, 0.9);
+	nosongMaterials.push(new THREE.MeshLambertMaterial(
+	    { color: color.getHex() } ));
+    }
 
     for ( var x = 0 ; x < xres ; x++ ) {
       grid[x] = [];
+      song[x] = [];
       for ( var y = 0; y < yres ; y++) {
-	cube = new THREE.Mesh( geometry, material );
+	cube = new THREE.Mesh( geometry, defaultMaterial );
 	cube.position.x = (x-xres/2) * size * 3 / 4;
 	cube.position.y = (y-yres/2) * size * SQRT3 / 2;
         if ((x % 2) == 1) {
@@ -70,12 +90,13 @@ function init() {
 	scene.add( cube );
 
 	grid[x][y] = cube;
+	song[x][y] = false;
       }
     }
 
     geometry = new THREE.PlaneGeometry( size*xres, size*yres );
 
-    plane = new THREE.Mesh( geometry, material );
+    plane = new THREE.Mesh( geometry, defaultMaterial );
     //plane.position.z = size;
     plane.visible = false;
     scene.add( plane );
@@ -102,23 +123,53 @@ function init() {
     controls = new THREE.TrackballControls(camera, renderer.domElement);
 
     mouse = new THREE.Vector3( 0, 0, 1 );
+    lastMouse = new THREE.Vector3( 0, 0, 1 );
     projector = new THREE.Projector();
     ray = new THREE.Ray( camera.position );
 
     renderer.domElement.addEventListener( 'mousemove', onDocumentMouseMove, false );
+    renderer.domElement.addEventListener( 'mousedown', onDocumentMouseDown, false );
 
 }
 
-function onDocumentMouseMove( event ) {
+function computeGridXY(offsetX, offsetY) {
     var c = renderer.domElement;
 
-    mouse.x = ( event.offsetX / c.width ) * 2 - 1;
-    mouse.y = - ( event.offsetY / c.height ) * 2 + 1;
+    mouse.x = ( offsetX / c.width ) * 2 - 1;
+    mouse.y = - ( offsetY / c.height ) * 2 + 1;
 
     ray.direction = projector.unprojectVector( mouse.clone(), camera );
     ray.direction.subSelf( camera.position ).normalize();
 
-    intersects = ray.intersectObject( plane );
+    var intersects = ray.intersectObject( plane );
+
+    if (!intersects.length) return null;
+
+    var point = intersects[ 0 ].point;
+    var x = Math.round((xres/2) + (point.x / (size*3/4) ));
+    var y = 0;
+    if ((x % 2) == 1) {
+	y = size * SQRT3 / 4;
+    }
+    var y = Math.round((yres/2) + ((point.y-y) / (size*SQRT3/2) ));
+
+    if (x >= 0 && x < xres &&
+	y >= 0 && y < yres ) {
+	return {x:x, y:y};
+    }
+    return null; // not a valid point.
+}
+
+function onDocumentMouseMove( event ) {
+    lastMouse.x = event.offsetX;
+    lastMouse.y = event.offsetY;
+}
+
+function onDocumentMouseDown( event ) {
+    var grid = computeGridXY(event.offsetX, event.offsetY);
+    if (!grid) return;
+    song[grid.x][grid.y] = !song[grid.x][grid.y];
+    triggerNote(grid.y);
 }
 
 function animate() {
@@ -131,24 +182,21 @@ function animate() {
 }
 
 function render() {
-    controls.update();
+    //controls.update(); // allow camera control for debugging
 
-    if ( intersects.length ) {
+    // update colors
+    for (var x=0; x<xres; x++) {
+	for (var y=0; y<yres; y++) {
+	    grid[x][y].materials[0] =
+		song[x][y] ? songMaterials[y] : nosongMaterials[y];
+	}
+    }
 
-      var point = intersects[ 0 ].point;
-      var x = Math.round((xres/2) + (point.x / (size*3/4) ));
-      var y = 0;
-      if ((x % 2) == 1) {
-	y = size * SQRT3 / 4;
-      }
-      var y = Math.round((yres/2) + ((point.y-y) / (size*SQRT3/2) ));
-
-      if (x >= 0 && x < xres &&
-	  y >= 0 && y < yres ) {
-
-	buffer1[x][y] = 10;
-	playNote(x, y);
-      }
+    var mouseover = computeGridXY(lastMouse.x, lastMouse.y);
+    if (mouseover) {
+	//grid[mouseover.x][mouseover.y].materials[0] = highlightMaterial;
+	buffer1[mouseover.x][mouseover.y] = 3;
+	//playNote(mouseover.x, mouseover.y);
     }
 
     // update buffers
@@ -299,13 +347,32 @@ function playNote(x, y) {
   var key = x + "," + y;
   if (last == key) return;
   last = key;
+  triggerNote(y);
+}
+function triggerNote(y) {
   ks[y].reset(null, frequencies[y]);
 }
+var lastStep = -1;
 function audioProcess(buffer, channelCount) {
   var l = buffer.length, i, n, y;
   for (i=0; i<l; i+=channelCount) {
-    for (y=0; y<yres; y++) { ks[y].generate(); }
+    // advance step sequencer
+    audioSeq.generate();
+    // do we need to trigger samples?
+    var step = audioSeq.getMix();
+    if (step !== lastStep) {
+      lastStep = step;
+      for (y=0; y<yres; y++) {
+	if (song[step][y]) {
+	  triggerNote(y);
+	  buffer1[step][y] = 25;
+	}
+      }
+    }
 
+    // ok, now generate all the string channels
+    for (y=0; y<yres; y++) { ks[y].generate(); }
+    // mix the channels in stereo
     for (n=0; n<channelCount; n++) {
       buffer[n+i] = 0;
       var channelPan = 1-(n/(channelCount-1));
@@ -328,11 +395,18 @@ window.onload = function() {
 
     // start audio engine
     initFrequencies();
-    for (var y=0; y<yres; y++) {
-      ks[y] = new KS(44100, 0);
-    }
     audioDev = audioLib.AudioDevice(audioProcess, 2);
-    for (var y=0; y<yres; y++) { ks[y].sampleRate = audioDev.sampleRate; }
+    for (var y=0; y<yres; y++) {
+      ks[y] = new KS(audioDev.sampleRate, 0);
+    }
+    var steps = [];
+    for (var x=0; x<xres; x+=2) {
+      steps.push(x);
+      steps.push(x);
+      steps.push(x);
+      steps.push(x+1); // swing time!
+    }
+    audioSeq = new audioLib.StepSequencer(audioDev.sampleRate, 125/4, steps);
 
     // start animating!
     animate();
