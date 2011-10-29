@@ -133,7 +133,8 @@ function init() {
     var buttons = [
 	{ id: "clearButton", label: "Clear Song" },
 	{ id: "drawButton", label: "Draw" },
-	{ id: "eraseButton", label: "Erase" }
+	{ id: "eraseButton", label: "Erase" },
+	{ id: "playButton", label: "Play" },
     ];
     for (var i=0; i<buttons.length; i++) {
 	var button = document.createElement("div");
@@ -145,6 +146,7 @@ function init() {
     document.getElementById('clearButton').onclick = clearGrid;
     document.getElementById('drawButton').onclick = clickDraw;
     document.getElementById('eraseButton').onclick = clickErase;
+    document.getElementById('playButton').onclick = clickPlay;
     clickDraw();
 }
 
@@ -159,12 +161,23 @@ function clearGrid() {
 function clickDraw() {
     document.getElementById('drawButton').className="button selected";
     document.getElementById('eraseButton').className="button";
+    document.getElementById('playButton').className="button";
     drawMode = true;
+    playMode = false;
 }
 function clickErase() {
     document.getElementById('drawButton').className="button";
     document.getElementById('eraseButton').className="button selected";
+    document.getElementById('playButton').className="button";
     drawMode = false;
+    playMode = false;
+}
+function clickPlay() {
+    document.getElementById('drawButton').className="button";
+    document.getElementById('eraseButton').className="button";
+    document.getElementById('playButton').className="button selected";
+    drawMode = false;
+    playMode = true;
 }
 
 function computeGridXY(offsetX, offsetY) {
@@ -196,9 +209,17 @@ function computeGridXY(offsetX, offsetY) {
 }
 
 var mouseDrag = false;
+var lastPlay = -1;
 function drawOrErase(x, y) {
     var grid = computeGridXY(event.offsetX, event.offsetY);
     if (!grid) return; // not in the grid
+    if (playMode) {
+	if (grid.y !== lastPlay) {
+	    lastPlay = grid.y;
+	    triggerNote(grid.y);
+	}
+	return;
+    }
     var was = song[grid.x][grid.y];
     song[grid.x][grid.y] = drawMode;
     if (drawMode && !was) {
@@ -220,6 +241,7 @@ function onDocumentMouseDown( event ) {
 
 function onDocumentMouseUp( event ) {
     mouseDrag = false;
+    lastPlay = -1;
 }
 
 function animate() {
@@ -244,9 +266,12 @@ function render() {
 
     var mouseover = computeGridXY(lastMouse.x, lastMouse.y);
     if (mouseover) {
-	//grid[mouseover.x][mouseover.y].materials[0] = highlightMaterial;
 	buffer1[mouseover.x][mouseover.y] = 3;
-	//playNote(mouseover.x, mouseover.y);
+	if (playMode && mouseDrag) {
+	    grid[mouseover.x][mouseover.y].materials[0] =
+		songMaterials[mouseover.y];
+	    buffer1[mouseover.x][mouseover.y] = 7;
+	}
     }
 
     // update buffers
