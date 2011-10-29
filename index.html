@@ -1,0 +1,100 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>A collection of Nell demos</title>
+<link href='http://fonts.googleapis.com/css?family=Alice' rel='stylesheet'
+      type='text/css'>
+<style type="text/css">
+body {
+  background: white;
+  font-family: 'Alice', sans-serif;
+}
+li { margin-bottom: 1em; }
+</style>
+</head>
+
+<body>
+<h1>A collection of Nell demos</h1>
+
+<p>Here are some banged-together demos of various pieces of
+<a href="http://cananian.livejournal.com/65077.html">Project Nell</a>.
+The ultimate goal is a Nell <a href="http://wiki.laptop.org/go/Nell">demo</a>
+for <a href="http://en.wikipedia.org/wiki/Consumer_Electronics_Show">CES</a>
+in January 2012, but these bits should be considered as tech demos,
+benchmarks, and proofs of concept, not actual pieces of that demo (yet).
+</p>
+
+<p>Most of these demos require WebGL support.  Visit <a
+href="http://get.webgl.org/">get.webgl.org</a> for information about
+enabling WebGL in your browser; there is WebGL support in Chrome,
+Firefox, Safari, and Opera&mdash;although it often requires enabling
+experimental features in the browser preferences.</p>
+
+<ul>
+  <li><a href="tile_test.html">Tiles</a>.  Performance benchmark
+  for a tile-based home screen.  "Apps" are "locations" on your world map,
+  which you can customize as you like.  (Here's an interesting
+  <a href="http://vocamus.net/dave/?p=1168">blog entry</a> discussing
+  world-creation for kids.)  Day/night would ultimately reflect current
+  time, although they've been greatly sped up in this demo.  Lots of
+  rough edges and missing UI, but all the textured triangles are
+  present, so it should be an accurate benchmark.<br />
+  (Drag with left mouse button to rotate, middle mouse button to zoom,
+  right mouse button to pan.)
+  </li>
+  
+  <li><a href="nell_home_test.html">Nell at home</a>.  Basic idea
+  (including transition) for activities which include dialog with
+  Nell or story-telling.<br />
+  Standalone model viewers:
+  <a href="watchtower_test.html">Castle</a>,
+  <a href="sintel_test.html">"Nell"</a> (Sintel, from <a href="http://www.blendswap.com/3D-models/characters/sintel-lite-2-57b/">blendswap</a>),
+  <a href="sintel_lite_test.html">Alternate (lightweight) Nell model</a>,
+  <a href="maison_test.html">Alternate (heavyweight) house model</a>
+  (from <a href="http://www.blendswap.com/3D-models/architecture/little-house/">blendswap</a>).<br />
+  In model viewers: drag with left mouse button to rotate, middle
+  mouse button to zoom, right mouse button to pan.
+  </li>
+
+  <li><a href="music.html">Music maker</a>. Uses WebGL and the Web
+  Audio APIs to let you draw and perform music.<br />
+  Inspired by Andr&eacute; Michelle's
+  <a href="http://lab.andre-michelle.com/tonematrix">ToneMatrix</a> and
+  <a href="http://lab.andre-michelle.com/karplus-strong-guitar">Karplus-Strong
+  Guitar</a> (see also
+  <a href="http://en.wikipedia.org/wiki/Karplus-Strong_string_synthesis">wiki</a> 
+  and this 2008 <a href="http://lac.linuxaudio.org/">Linux Audio Conference</a>
+  <a
+  href="https://ccrma.stanford.edu/realsimple/faust_strings/faust_strings.pdf">paper</a>),
+  as well as <a href="http://labs.dinahmoe.com/">DinahMoe</a>'s
+  <a href="http://labs.dinahmoe.com/ToneCraft/">ToneCraft</a> and
+  the <a href="http://www.global.yamaha.com/tenori-on/">Tenori-on</a>.
+  </li>
+
+  <li><a href="http://www.youtube.com/watch?v=4Mr27yY8-A8">Quake on XO-1.75</a>
+  (video).
+  Of course we need to actually run WebGL with good performance on XO
+  hardware.  Jon Nettleton has been working hard on our GL drivers,
+  enabling the GPU on the XO-1.75 hardware for the first time.
+  This Quake demo shows his progress&mdash;don't worry, Quake is not
+  actually part of the Nell demo! (We have a GPU in the XO-1.5 as
+  well, which hasn't yet been utilized.)
+  </li>
+
+  <li><a href="http://twolivesleft.com/Codify/">Codify</a>&mdash;not
+  one of our demos (it's a commercial iPad app) but it demonstrates
+  what we'd like to turn Pippy into for Nell.</li>
+</ul>
+
+<p>Coming soon: TurtleArt and Implode for the web.  We've started
+  converting them to GTK3 in preparation for hoisting them bodily onto
+  the interwebs.  Here's the <a
+  href="http://git.sugarlabs.org/~cscott/turtleart/cscott-gtk3/commits/gtk3">source
+  code repository for the TurtleArt port</a> if you'd like to watch or
+  participate in this hackage.  (See <a href="http://repl.it">repl.it</a>
+  for one of the more unusual ways to get Python running in the web
+  context</a>.)</p>
+
+  </body>
+</html>
